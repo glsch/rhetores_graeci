@@ -85,12 +85,15 @@ if __name__ == "__main__":
     )
 
     # batch = collate_fn(batch)
-
     for _, b in enumerate(train_loader):
         if _ == 4:
             break
 
         print(b)
+
+
+    print(len(mlm_dataset.labels))
+    print(mlm_dataset.id2label)
 
         # print(model(**b))
 
