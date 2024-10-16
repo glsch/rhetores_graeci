@@ -48,8 +48,7 @@ class MLMDataset(Dataset):
             max_length=512,
             truncation=True,
             padding="max_length",
-            return_special_tokens_mask=True,
-            return_tensors="pt"
+            return_special_tokens_mask=True
         )
 
         return tokenized
