@@ -8,4 +8,6 @@ beautifulsoup4==4.12.3
 selenium==4.25.0
 jsonargparse==4.33.2
 gdown==5.2.0
-
+seaborn==0.13.2
+matplotlib==3.9.2
+scikit-learn==1.5.2

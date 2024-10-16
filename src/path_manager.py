@@ -2,6 +2,7 @@ from datetime import datetime
 import json
 import os
 from typing import Union
+from dotenv import load_dotenv
 
 class PathManager:
 
@@ -25,7 +26,6 @@ class PathManager:
     classifier_basename = None
 
     def __new__(cls):
-
         location = os.getenv("LOCATION", "local")
 
         if cls._instance is None:

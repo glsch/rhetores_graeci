@@ -19,4 +19,3 @@ def download_dataset():
     logger.info("download_preprocessed_corpus() -- Unzipping")
     with zipfile.ZipFile(archive_path, 'r') as zip_ref:
         [zip_ref.extract(member, fname) for member in zip_ref.namelist() if '__MACOSX' not in member]
-
