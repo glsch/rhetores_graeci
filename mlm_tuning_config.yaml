@@ -99,7 +99,7 @@ trainer:
 model:
   class_path: src.MlmTuningModule.MlmTuningModule
   init_args:
-    scheduler_type: COSINE
+    scheduler_type: LINEAR
     model:
       class_path: src.MlmTuningModule.AutoModelForMaskedLMWrapper
       init_args:

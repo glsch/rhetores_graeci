@@ -68,6 +68,7 @@ class RhetoresGraecigCli(LightningCLI):
             "trainer.logger": logger_config,
             # "trainer.logger": lazy_instance(WandbLogger, project="PatristicStylometryClustering", log_model="all"),
             "trainer.precision": 32,
+            "trainer.max_epochs": 30,
             "trainer.log_every_n_steps": 1,
             "trainer.check_val_every_n_epoch": 1,
             "trainer.enable_checkpointing": True,

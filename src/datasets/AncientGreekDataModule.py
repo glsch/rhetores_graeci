@@ -13,7 +13,7 @@ from jsonargparse.typing import NonNegativeInt, NonNegativeFloat,ClosedUnitInter
 from src.datasets.PandasDataset import PandasDataset
 from src.path_manager import PathManager
 from src.datasets.utils import download_dataset
-from transformers import AutoTokenizer, AutoModel, RobertaModel, DataCollatorForLanguageModeling
+from transformers import AutoTokenizer, AutoModel, RobertaModel, DataCollatorForLanguageModeling, DefaultDataCollator
 
 import torch
 from transformers import PreTrainedTokenizer, PreTrainedTokenizerFast, AutoTokenizer
@@ -24,6 +24,7 @@ from torch.utils.data import Dataset, DataLoader
 from src.MlmTuningModule import AutoModelForMaskedLMWrapper
 from src.classification.ClassificationModule import AutoModelForSequenceClassificationWrapper
 from src.datasets.MlmDataset import MLMDataset
+from src.datasets.ClassificationDataset import ClassificationDataset
 from src.logger_config import logger
 
 class TextChunkType(enum.Enum):
@@ -189,6 +190,10 @@ class AncientGreekDataModule(LightningDataModule):
 
             self.dataset.to_csv(os.path.join(PathManager.data_path, "preprocessed", "preprocessed_dataset.csv"), index=False)
 
+        else:
+            self.dataset = pd.read_csv(os.path.join(PathManager.data_path, "preprocessed", "preprocessed_dataset.csv"))
+
+
     def setup(self, stage: str) -> None:
         dataset_cls = None
         self.collate_fn = None
@@ -205,7 +210,8 @@ class AncientGreekDataModule(LightningDataModule):
         elif isinstance(self.trainer.model.model, AutoModelForSequenceClassificationWrapper):
             logger.info(
                 f"AncientGreekDataModule.setup() -- Model is subclass of {AutoModelForMaskedLMWrapper}: {self.trainer.model.model.__class__.__name__}")
-            # dataset_cls = ClassificationDataset
+            dataset_cls = ClassificationDataset
+            self.collate_fn = DefaultDataCollator(return_tensors="pt")
         else:
             logger.info(
                 f"AncientGreekDataModule.setup() -- Model is {self.trainer.model.model} {self.trainer.model.model.__class__} {self.trainer.model.model.__class__.__name__} {self.trainer.model.model.__dir__}")

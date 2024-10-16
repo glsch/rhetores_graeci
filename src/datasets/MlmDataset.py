@@ -2,7 +2,7 @@ import argparse
 from functools import partial
 import os.path
 import random
-from typing import Literal, List, Union, Tuple, Dict
+from typing import Literal, List, Union, Tuple, Dict, Any
 
 import pandas as pd
 
@@ -31,6 +31,7 @@ class MLMDataset(Dataset):
             tokenizer: Union[PreTrainedTokenizer, PreTrainedTokenizerFast],
             df: pd.DataFrame,
             split: Literal["train", "val", "test"] = "train",
+            **kwargs: Any
     ):
 
         self.split = split
