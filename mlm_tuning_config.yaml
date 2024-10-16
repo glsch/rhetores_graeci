@@ -61,7 +61,7 @@ trainer:
       enable_version_counter: true
   - class_path: lightning.pytorch.callbacks.LearningRateMonitor
     init_args:
-      logging_interval: epoch
+      logging_interval: step
       log_momentum: false
       log_weight_decay: false
   fast_dev_run: false
