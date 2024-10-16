@@ -9,6 +9,10 @@ import torch
 from transformers import SchedulerType, get_scheduler, AutoModelForSequenceClassification, AutoTokenizer
 from transformers import RobertaForSequenceClassification
 
+# todo: confusion matrix for each epoch
+# todo: attribution of the AR chapters
+# todo: stats for logical divisions of the AR
+
 class AutoModelForSequenceClassificationWrapper(torch.nn.Module):
     def __init__(self, pretrained_model_name_or_path: str = "bowphs/GreBerta"):
         super().__init__()
