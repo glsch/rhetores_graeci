@@ -95,10 +95,11 @@ class MlmTuningModule(LightningModule):
         ]
         optimizer = self.optimizer_callable(optimizer_grouped_parameters)
 
-        num_training_steps = self.trainer.estimated_stepping_batches,
+        num_training_steps = self.trainer.estimated_stepping_batches
 
-        logger.info(f"ModelForTransferMLM.configure_optimizers() -- Warmup steps: {self.num_warmup_steps}, {type(self.num_warmup_steps)}")
-        logger.info(f"ModelForTransferMLM.configure_optimizers() -- Num training steps: {num_training_steps}, {type(num_training_steps)}")
+        logger.debug(f"ModelForTransferMLM.configure_optimizers() -- Warmup steps: {self.num_warmup_steps}, {type(self.num_warmup_steps)}")
+        logger.debug(f"ModelForTransferMLM.configure_optimizers() -- Num training steps: {num_training_steps}, {type(num_training_steps)}")
+
         lr_scheduler = get_scheduler(
             name=self.lr_scheduler_type,
             optimizer=optimizer,
