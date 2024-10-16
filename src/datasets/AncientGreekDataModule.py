@@ -65,6 +65,8 @@ class AncientGreekDataModule(LightningDataModule):
 
         self.dataset = None
 
+        self.save_hyperparameters()
+
     def prepare_data(self) -> None:
         def expand_levels(levels):
             row_dict = {}
