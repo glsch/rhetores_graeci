@@ -85,7 +85,7 @@ model:
     optimizer:
       class_path: torch.optim.AdamW
       init_args:
-        lr: 0.001
+        lr: 5e-5
         betas:
         - 0.9
         - 0.999
@@ -98,7 +98,7 @@ model:
         differentiable: false
         fused: null
     weight_decay: 0.0
-    num_warmup_steps: 0
+    num_warmup_steps: 500
 data:
   epithets:
   - Rhet.
