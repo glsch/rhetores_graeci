@@ -108,5 +108,5 @@ data:
   num_workers: 0
   persistent_workers: false
   chunk_length: 256
-  overlap: 0.5
+  overlap: 0.0
 ckpt_path: null
