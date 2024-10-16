@@ -222,7 +222,14 @@ class AncientGreekDataModule(LightningDataModule):
         )
 
     def test_dataloader(self):
-        pass
+        return DataLoader(
+            self.test_dataset,
+            batch_size=self.batch_size,
+            collate_fn=self.collate_fn,
+            shuffle=False,
+            num_workers=self.num_workers,
+            persistent_workers=self.persistent_workers
+        )
 
 if __name__ == "__main__":
     tokenizer = AutoTokenizer.from_pretrained("bowphs/GreBerta")
