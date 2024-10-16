@@ -1,0 +1,31 @@
+{
+  "path":
+    {
+      "root": ".",
+      "data": {
+        "local": "./data",
+        "server": "/vol/tensusers2/gschmidt/language_models_for_greek_rhetoricians/data",
+        "colab": "./data"
+      },
+      "raw": "raw",
+      "preprocessed": "preprocessed",
+      "output": {
+        "server": "/vol/tensusers2/gschmidt/language_models_for_greek_rhetoricians/output",
+        "local":  "./output",
+        "colab": "/content/drive/MyDrive/language_models_for_greek_rhetoricians/output"
+      },
+      "models": "models",
+      "access_key": "./access_key.txt",
+      "hub_token": "./huggingface_hub_token.txt",
+      "scripts": "./scripts",
+      "templates": "./src/templates"
+
+    },
+  "name": {
+    "dataset":  "dataset.csv",
+    "author_metadata": "author_metadata.csv",
+    "model": "ancient-greek",
+    "tokenizer": "tokenizer",
+    "classifier": "classifier"
+  }
+}
