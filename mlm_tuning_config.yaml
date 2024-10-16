@@ -81,7 +81,7 @@ model:
       class_path: src.MlmTuningModule.AutoModelForMaskedLMWrapper
       init_args:
         pretrained_model_name_or_path: bowphs/GreBerta
-    scheduler_type: LINEAR
+    scheduler_type: linear
     optimizer:
       class_path: torch.optim.AdamW
       init_args:
