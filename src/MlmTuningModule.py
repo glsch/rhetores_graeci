@@ -98,7 +98,7 @@ class MlmTuningModule(LightningModule):
         num_training_steps = self.trainer.estimated_stepping_batches,
 
         lr_scheduler = get_scheduler(
-            name=self.scheduler_type,
+            name=self.lr_scheduler_type,
             optimizer=optimizer,
             num_warmup_steps=self.num_warmup_steps,
             num_training_steps=num_training_steps
