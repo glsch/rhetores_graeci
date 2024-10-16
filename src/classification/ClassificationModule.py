@@ -16,6 +16,10 @@ class AutoModelForSequenceClassificationWrapper(torch.nn.Module):
 
         if isinstance(pretrained_model_name_or_path, str):
             self.model = AutoModelForSequenceClassification.from_pretrained(pretrained_model_name_or_path=self.pretrained_model_name_or_path)
+            if self.pretrained_model_name_or_path != "altsoph/bert-base-ancientgreek-uncased":
+                self.tokenizer = AutoTokenizer.from_pretrained(self.pretrained_model_name_or_path)
+            else:
+                self.tokenizer = AutoTokenizer.from_pretrained("nlpaueb/bert-base-greek-uncased-v1")
 
     def forward(self, x):
         return self.model(x)
@@ -34,7 +38,7 @@ class ClassificationModule(LightningModule):
         self.tokenizer = None
 
         if isinstance(model, AutoModelForSequenceClassificationWrapper):
-            self.tokenizer = AutoTokenizer.from_pretrained(self.model.pretrained_model_name_or_path)
+            self.tokenizer = self.model.tokenizer
         elif hasattr(model, "transformer"):
             self.tokenizer = AutoTokenizer.from_pretrained(self.model.transformer.config._name_or_path)
         else:

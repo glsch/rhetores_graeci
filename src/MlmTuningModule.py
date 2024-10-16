@@ -35,6 +35,10 @@ class AutoModelForMaskedLMWrapper(torch.nn.Module):
 
         if isinstance(pretrained_model_name_or_path, str):
             self.model = AutoModelForMaskedLM.from_pretrained(pretrained_model_name_or_path=self.pretrained_model_name_or_path)
+            if self.pretrained_model_name_or_path != "altsoph/bert-base-ancientgreek-uncased":
+                self.tokenizer = AutoTokenizer.from_pretrained(self.pretrained_model_name_or_path)
+            else:
+                self.tokenizer = AutoTokenizer.from_pretrained("nlpaueb/bert-base-greek-uncased-v1")
 
     def forward(self, x):
         return self.model(**x)
@@ -54,7 +58,7 @@ class MlmTuningModule(LightningModule):
 
         self.model = model
         if isinstance(model, AutoModelForMaskedLMWrapper):
-            self.tokenizer = AutoTokenizer.from_pretrained(self.model.pretrained_model_name_or_path)
+            self.tokenizer = self.model.tokenizer
         else:
             raise ValueError("Model must be an instance of AutoModelForMaskedLMWrapper")
 
