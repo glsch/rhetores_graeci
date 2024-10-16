@@ -1,7 +1,7 @@
 import ast
 import enum
 import os.path
-from typing import List
+from typing import List, Union
 
 from tqdm import tqdm
 tqdm.pandas()
@@ -16,7 +16,7 @@ from src.datasets.utils import download_dataset
 from transformers import AutoTokenizer, AutoModel, RobertaModel, DataCollatorForLanguageModeling
 
 import torch
-from transformers import PreTrainedTokenizer, AutoTokenizer
+from transformers import PreTrainedTokenizer, PreTrainedTokenizerFast, AutoTokenizer
 from nltk import sent_tokenize, word_tokenize
 import pandas as pd
 from torch.utils.data import Dataset, DataLoader
@@ -31,7 +31,7 @@ class TextChunkType(enum.Enum):
 
 class AncientGreekDataModule(LightningDataModule):
     def __init__(self,
-                 tokenizer: PreTrainedTokenizer=None,
+                 tokenizer: Union[PreTrainedTokenizer, PreTrainedTokenizerFast]=None,
                  epithets: List[str]=None,
                  chunk_type: TextChunkType = TextChunkType.CHUNK,
                  batch_size: NonNegativeInt = 1,
