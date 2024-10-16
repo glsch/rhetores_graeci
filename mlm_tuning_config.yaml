@@ -97,7 +97,6 @@ model:
         capturable: false
         differentiable: false
         fused: null
-    weight_decay: 0.0
     num_warmup_steps: 500
 data:
   epithets:
