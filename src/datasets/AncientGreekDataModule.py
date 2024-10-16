@@ -23,6 +23,7 @@ from torch.utils.data import Dataset, DataLoader
 
 from src.MlmTuningModule import AutoModelForMaskedLMWrapper
 from src.datasets.MlmDataset import MLMDataset
+from src.logger_config import logger
 
 class TextChunkType(enum.Enum):
     SENTENCE = "sentence"
@@ -193,9 +194,15 @@ class AncientGreekDataModule(LightningDataModule):
         self.val_df = self.dataset[self.dataset["split"] == "val"]
         self.test_df = self.dataset[self.dataset["split"] == "test"]
 
-        if isinstance(self.trainer.model, AutoModelForMaskedLMWrapper):
+        if isinstance(self.trainer.model.model, AutoModelForMaskedLMWrapper):
+            logger.info(f"AncientGreekDataModule.setup() -- Model is subclass of {AutoModelForMaskedLMWrapper}: {self.trainer.model}")
             dataset_cls = MLMDataset
             self.collate_fn = DataCollatorForLanguageModeling(tokenizer=self.tokenizer, mlm=True, mlm_probability=0.15)
+
+        else:
+            logger.info(
+                f"AncientGreekDataModule.setup() -- Model is {self.trainer.model} {self.trainer.model.__class__} {self.trainer.model.__class__.__name__} {self.trainer.model.__dir__}")
+            raise ValueError("Invalid model")
 
         if stage == "fit":
             self.train_dataset = dataset_cls(df=self.train_df, split="train", tokenizer=self.tokenizer)
