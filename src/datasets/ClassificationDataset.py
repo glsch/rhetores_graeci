@@ -35,6 +35,14 @@ class ClassificationDataset(Dataset):
         self.sequences = self.df["text"].tolist()
         self.labels = self.df["label"].tolist()
 
+    def populate_authors(self):
+        n = self.steps // self.window
+        if self.steps % self.window != 0:
+            n += 1
+        expanded = self.orig_authors * n
+
+        return expanded[:self.steps]
+
     def __len__(self):
         return len(self.sequences)
 
