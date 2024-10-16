@@ -114,6 +114,7 @@ class RhetoresGraecigCli(LightningCLI):
 
 def cli_main():
     torch.multiprocessing.set_sharing_strategy('file_system')
+    os.environ["TOKENIZERS_PARALLELISM"] = "1"
     torch.set_float32_matmul_precision('medium')
 
     random.seed(0)

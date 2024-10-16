@@ -72,112 +72,113 @@ class AncientGreekDataModule(LightningDataModule):
                 row_dict[f'l{i}_name'] = name
             return row_dict
 
-        if not (os.path.exists(self.dataset_path) and os.path.exists(self.author_metadata_path)):
-            download_dataset()
+        if not os.path.exists(os.path.join(PathManager.data_path, "preprocessed_dataset.csv")):
+            if not (os.path.exists(self.dataset_path) and os.path.exists(self.author_metadata_path)):
+                download_dataset()
 
-        # opening dataset and metadata
-        pd_dataset = PandasDataset(dataset_path=self.dataset_path, author_metadata_path=self.author_metadata_path)
+            # opening dataset and metadata
+            pd_dataset = PandasDataset(dataset_path=self.dataset_path, author_metadata_path=self.author_metadata_path)
 
-        if len(self.epithets) > 0:
-            filtered_authors = pd_dataset.select_authors_by_epithet(self.epithets)
-            filtered_df = pd_dataset.df[pd_dataset.df["author_id"].isin(filtered_authors["author_id"])]
-        else:
-            filtered_df = pd_dataset.df
+            if len(self.epithets) > 0:
+                filtered_authors = pd_dataset.select_authors_by_epithet(self.epithets)
+                filtered_df = pd_dataset.df[pd_dataset.df["author_id"].isin(filtered_authors["author_id"])]
+            else:
+                filtered_df = pd_dataset.df
 
-        # authors for the study
-        study_author_ids = [284, 87, 607, 640, 594, 2002, 2178, 613, 1376, 592, 649, 560, 2586, 2903, 616, 605, 2027, 81]
-        # authors which constituted UNK category in the article
-        unk_author_ids = [607, 594, 2002, 2178, 649, 560, 186, 2903, 605]
+            # authors for the study
+            study_author_ids = [284, 87, 607, 640, 594, 2002, 2178, 613, 1376, 592, 649, 560, 2586, 2903, 616, 605, 2027, 81]
+            # authors which constituted UNK category in the article
+            unk_author_ids = [607, 594, 2002, 2178, 649, 560, 186, 2903, 605]
 
-        filtered_df["levels"] = filtered_df["levels"].fillna(method="ffill")
+            filtered_df["levels"] = filtered_df["levels"].fillna(method="ffill")
 
-        dataset = filtered_df
-        expanded_rows = []
+            dataset = filtered_df
+            expanded_rows = []
 
-        for i, r in tqdm(dataset.iterrows(), total=dataset.shape[0]):
-            levels = ast.literal_eval(r["levels"])
-            new_r = {}
-            for k, v in r.to_dict().items():
-                if k == "levels":
-                    continue
-                else:
-                    if k in ("author_id", "work_id"):
-                        new_r[k] = int(v)
+            for i, r in tqdm(dataset.iterrows(), total=dataset.shape[0]):
+                levels = ast.literal_eval(r["levels"])
+                new_r = {}
+                for k, v in r.to_dict().items():
+                    if k == "levels":
+                        continue
                     else:
-                        new_r[k] = str(v)
+                        if k in ("author_id", "work_id"):
+                            new_r[k] = int(v)
+                        else:
+                            new_r[k] = str(v)
 
-            new_r.update(expand_levels(levels))
-            expanded_rows.append(new_r)
+                new_r.update(expand_levels(levels))
+                expanded_rows.append(new_r)
 
-        dataset = pd.DataFrame(data=expanded_rows)
+            dataset = pd.DataFrame(data=expanded_rows)
 
-        grouped_dfs = []
-        for i, ((author_id, author_label, work_id), df) in enumerate(dataset.groupby(["author_id", "author_label", "work_id"])):
-            # todo: add hermogenean divisions here
-            if author_id == 81 and work_id == 16:
-                for j, (chapter, chapter_df) in enumerate(df.groupby("l1")):
-                    chapter_df = pd.DataFrame(
-                        data=[{"text": " ".join(chapter_df["text"].tolist()), "author_id": author_id, "work_id": work_id, "siglum": f"{author_label}_AR_{chapter}", 'target': author_label}])
+            grouped_dfs = []
+            for i, ((author_id, author_label, work_id), df) in enumerate(dataset.groupby(["author_id", "author_label", "work_id"])):
+                # todo: add hermogenean divisions here
+                if author_id == 81 and work_id == 16:
+                    for j, (chapter, chapter_df) in enumerate(df.groupby("l1")):
+                        chapter_df = pd.DataFrame(
+                            data=[{"text": " ".join(chapter_df["text"].tolist()), "author_id": author_id, "work_id": work_id, "siglum": f"{author_label}_AR_{chapter}", 'target': author_label}])
 
-                    grouped_dfs.append(chapter_df)
-            #
-            elif author_id in (592, 2586, 284, 2027, 87):
-                for w, (work_id, work_df) in enumerate(df.groupby("work_id")):
-                    # for the future verification task
-                    siglum = f"{author_label}_{work_id}_uncertain"
-                    work_df = pd.DataFrame(
-                        data=[{"text": " ".join(work_df["text"].tolist()), "author_id": author_id, "work_id": work_id, 'target': author_label, 'siglum': siglum}])
+                        grouped_dfs.append(chapter_df)
+                #
+                elif author_id in (592, 2586, 284, 2027, 87):
+                    for w, (work_id, work_df) in enumerate(df.groupby("work_id")):
+                        # for the future verification task
+                        siglum = f"{author_label}_{work_id}_uncertain"
+                        work_df = pd.DataFrame(
+                            data=[{"text": " ".join(work_df["text"].tolist()), "author_id": author_id, "work_id": work_id, 'target': author_label, 'siglum': siglum}])
 
-                    grouped_dfs.append(work_df)
+                        grouped_dfs.append(work_df)
+
+                else:
+                    new_df = pd.DataFrame(data=[
+                        {"text": " ".join(df["text"].tolist()), "author_id": author_id, "work_id": work_id,
+                         'target': author_label, 'siglum': f"{author_label}_{work_id}"}])
+
+                    grouped_dfs.append(new_df)
+
+            dataset = pd.concat(grouped_dfs)
+            dataset = dataset.dropna(subset=['text'])
+
+            all_chunks = []
+            if self.chunk_type == TextChunkType.CHUNK:
+                for i, r in tqdm(dataset.iterrows(), total=dataset.shape[0]):
+                    tokens = self.tokenizer(r["text"], add_special_tokens=False).input_ids
+                    row_chunks = [tokens[i:i + self.chunk_length] for i in range(0, len(tokens), self.chunk_length - int(self.chunk_length * self.overlap))]
+                    all_chunks.append(row_chunks)
+
+                chunks = [self.tokenizer.batch_decode(row_chunks) for row_chunks in all_chunks]
+
+            elif self.chunk_type == TextChunkType.SENTENCE:
+                for i, r in tqdm(dataset.iterrows(), total=dataset.shape[0]):
+                    all_chunks.append(sent_tokenize(r["text"]))
+
+                chunks = all_chunks
 
             else:
-                new_df = pd.DataFrame(data=[
-                    {"text": " ".join(df["text"].tolist()), "author_id": author_id, "work_id": work_id,
-                     'target': author_label, 'siglum': f"{author_label}_{work_id}"}])
+                raise ValueError("Invalid chunk type")
 
-                grouped_dfs.append(new_df)
+            dataset = dataset.assign(chunks=chunks)
 
-        dataset = pd.concat(grouped_dfs)
-        dataset = dataset.dropna(subset=['text'])
+            dataset = dataset.explode("chunks")
+            dataset = dataset.dropna(subset=['chunks'])
+            dataset = dataset.reset_index(drop=True)
 
-        all_chunks = []
-        if self.chunk_type == TextChunkType.CHUNK:
-            for i, r in tqdm(dataset.iterrows(), total=dataset.shape[0]):
-                tokens = self.tokenizer(r["text"], add_special_tokens=False).input_ids
-                row_chunks = [tokens[i:i + self.chunk_length] for i in range(0, len(tokens), self.chunk_length - int(self.chunk_length * self.overlap))]
-                all_chunks.append(row_chunks)
+            self.dataset = dataset
 
-            chunks = [self.tokenizer.batch_decode(row_chunks) for row_chunks in all_chunks]
+            self.dataset = self.dataset.assign(split="train")
 
-        elif self.chunk_type == TextChunkType.SENTENCE:
-            for i, r in tqdm(dataset.iterrows(), total=dataset.shape[0]):
-                all_chunks.append(sent_tokenize(r["text"]))
+            self.dataset = self.dataset.sample(frac=1.0)
+            self.train = self.dataset.iloc[:int(0.8 * self.dataset.shape[0])]
+            self.dataset.loc[self.train.index, "split"] = "train"
+            self.val = self.dataset.iloc[int(0.8 * self.dataset.shape[0]):int(0.9 * self.dataset.shape[0])]
+            self.dataset.loc[self.val.index, "split"] = "val"
 
-            chunks = all_chunks
+            self.test = self.dataset.iloc[int(0.9 * self.dataset.shape[0]):]
+            self.dataset.loc[self.test.index, "split"] = "test"
 
-        else:
-            raise ValueError("Invalid chunk type")
-
-        dataset = dataset.assign(chunks=chunks)
-
-        dataset = dataset.explode("chunks")
-        dataset = dataset.dropna(subset=['chunks'])
-        dataset = dataset.reset_index(drop=True)
-
-        self.dataset = dataset
-
-        self.dataset = self.dataset.assign(split="train")
-
-        self.dataset = self.dataset.sample(frac=1.0)
-        self.train = self.dataset.iloc[:int(0.8 * self.dataset.shape[0])]
-        self.dataset.loc[self.train.index, "split"] = "train"
-        self.val = self.dataset.iloc[int(0.8 * self.dataset.shape[0]):int(0.9 * self.dataset.shape[0])]
-        self.dataset.loc[self.val.index, "split"] = "val"
-
-        self.test = self.dataset.iloc[int(0.9 * self.dataset.shape[0]):]
-        self.dataset.loc[self.test.index, "split"] = "test"
-
-        self.dataset.to_csv(os.path.join(PathManager.data_path, "preprocessed_dataset.csv"), index=False)
+            self.dataset.to_csv(os.path.join(PathManager.data_path, "preprocessed_dataset.csv"), index=False)
 
     def setup(self, stage: str) -> None:
         dataset_cls = None
@@ -233,6 +234,6 @@ class AncientGreekDataModule(LightningDataModule):
 
 if __name__ == "__main__":
     tokenizer = AutoTokenizer.from_pretrained("bowphs/GreBerta")
-    dm = AncientGreekDataModule(epithets=["Rhet.", "Orat."], tokenizer=tokenizer, chunk_type=TextChunkType.SENTENCE)
+    dm = AncientGreekDataModule(epithets=["Rhet.", "Orat."], tokenizer=tokenizer, chunk_type=TextChunkType.CHUNK, overlap=0.0, chunk_length=512)
 
     dm.prepare_data()
