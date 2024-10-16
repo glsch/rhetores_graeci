@@ -28,6 +28,8 @@ from jsonargparse.typing import NonNegativeInt, NonNegativeFloat,ClosedUnitInter
 from src.path_manager import PathManager
 from src.logger_config import logger
 
+# todo: add pushing to hub
+
 class AutoModelForMaskedLMWrapper(torch.nn.Module):
     def __init__(self, pretrained_model_name_or_path: str = "bowphs/GreBerta"):
         super().__init__()
@@ -120,7 +122,11 @@ class MlmTuningModule(LightningModule):
             "optimizer": optimizer,
             "lr_scheduler": {
                 "scheduler": scheduler,
-                "interval": "step",  # Call scheduler.step() after each training step
+                "interval": "step",
+                "frequency": 1,
+                #"monitor": "val/loss",
+                #"strict": False,
+                "name": self.lr_scheduler_type
             },
         }
 
