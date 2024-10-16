@@ -19,6 +19,10 @@ import torch
 from transformers import PreTrainedTokenizer, AutoTokenizer
 from nltk import sent_tokenize, word_tokenize
 import pandas as pd
+from torch.utils.data import Dataset, DataLoader
+
+from src.MlmTuningModule import AutoModelForMaskedLMWrapper
+from src.datasets.MlmDataset import MLMDataset
 
 class TextChunkType(enum.Enum):
     SENTENCE = "sentence"
@@ -162,14 +166,60 @@ class AncientGreekDataModule(LightningDataModule):
 
         self.dataset = dataset
 
+        self.dataset = self.dataset.assign(split="train")
+
+        self.dataset = self.dataset.sample(frac=1.0)
+        self.train = self.dataset.iloc[:int(0.8 * self.dataset.shape[0])]
+        self.dataset.loc[self.train.index, "split"] = "train"
+        self.val = self.dataset.iloc[int(0.8 * self.dataset.shape[0]):int(0.9 * self.dataset.shape[0])]
+        self.dataset.loc[self.val.index, "split"] = "val"
+
+        self.test = self.dataset.iloc[int(0.9 * self.dataset.shape[0]):]
+        self.dataset.loc[self.test.index, "split"] = "test"
+
+        self.dataset.to_csv(os.path.join(PathManager.data_path, "preprocessed_dataset.csv"), index=False)
+
     def setup(self, stage: str) -> None:
-        pass
+        dataset_cls = None
+        self.collate_fn = None
+        self.dataset = self.dataset.read_csv(os.path.join(PathManager.data_path, "preprocessed_dataset.csv"))
+
+        self.train_df = self.dataset[self.dataset["split"] == "train"]
+        self.val_df = self.dataset[self.dataset["split"] == "val"]
+        self.test_df = self.dataset[self.dataset["split"] == "test"]
+
+        if isinstance(self.trainer.model, AutoModelForMaskedLMWrapper):
+            dataset_cls = MLMDataset
+            self.collate_fn = DataCollatorForLanguageModeling(tokenizer=self.tokenizer, mlm=True, mlm_probability=0.15)
+
+        if stage == "fit":
+            self.train_dataset = dataset_cls(df=self.train_df, split="train", tokenizer=self.tokenizer)
+            self.val_dataset = dataset_cls(df=self.val_df, split="val", tokenizer=self.tokenizer)
+
+        elif stage == "test":
+            self.val_dataset = dataset_cls(df=self.val_df, split="val", tokenizer=self.tokenizer)
+            self.test_dataset = dataset_cls(df=self.test_df, split="test", tokenizer=self.tokenizer)
+
 
     def train_dataloader(self):
-        pass
+        return DataLoader(
+            self.train_dataset,
+            batch_size=self.batch_size,
+            collate_fn=self.collate_fn,
+            shuffle=True,
+            num_workers=self.num_workers,
+            persistent_workers=self.persistent_workers
+        )
 
     def val_dataloader(self):
-        pass
+        return DataLoader(
+            self.val_dataset,
+            batch_size=self.batch_size,
+            collate_fn=self.collate_fn,
+            shuffle=False,
+            num_workers=self.num_workers,
+            persistent_workers=self.persistent_workers
+        )
 
     def test_dataloader(self):
         pass

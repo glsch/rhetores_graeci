@@ -30,7 +30,7 @@ class MLMDataset(Dataset):
             self,
             tokenizer: PreTrainedTokenizer,
             df: pd.DataFrame,
-            split: Literal["train", "dev", "test"] = "train",
+            split: Literal["train", "val", "test"] = "train",
     ):
 
         self.split = split
