@@ -72,7 +72,7 @@ class AncientGreekDataModule(LightningDataModule):
                 row_dict[f'l{i}_name'] = name
             return row_dict
 
-        if not os.path.exists(os.path.join(PathManager.data_path, "preprocessed_dataset.csv")):
+        if not os.path.exists(os.path.join(PathManager.data_path, "preprocessed", "preprocessed_dataset.csv")):
             if not (os.path.exists(self.dataset_path) and os.path.exists(self.author_metadata_path)):
                 download_dataset()
 
@@ -182,7 +182,7 @@ class AncientGreekDataModule(LightningDataModule):
 
             self.dataset.rename(columns={"chunks": "text"}, inplace=True)
 
-            self.dataset.to_csv(os.path.join(PathManager.data_path, "preprocessed_dataset.csv"), index=False)
+            self.dataset.to_csv(os.path.join(PathManager.data_path, "preprocessed", "preprocessed_dataset.csv"), index=False)
 
     def setup(self, stage: str) -> None:
         dataset_cls = None
