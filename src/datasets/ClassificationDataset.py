@@ -27,25 +27,16 @@ class ClassificationDataset(Dataset):
         self.tokenizer = tokenizer
         self.split = split
 
+        self.df["label"], unique = pd.factorize(self.df["target"])
+
+        self.id2label = {i: l for i, l in enumerate(unique)}
+        self.label2id = {l: i for i, l in self.id2label.items()}
+
+        self.sequences = self.df["text"].tolist()
+        self.labels = self.df["label"].tolist()
+
     def __len__(self):
-        return self.df["label"].unique().tolist()
-
-    def sample_example_set(self, idx: int):
-        """
-        For datapoint 'idx':
-         1) Retrieves 'target'
-         2) Takes `num_style_examples` - 1 samples samples where 'target' is the same as 'target' of 'idx'
-        where 'target' is the same as  of writing style examples,
-        returning a list of str
-
-        :param idx: Index of the datapoint in self.data_df
-        :return:
-        """
-        sampled_rows = self.df[self.df["label"] == idx]
-        if sampled_rows.shape[0] < self.params.num_style_examples:
-            return sampled_rows[["text", "label"]].to_dict(orient="records")
-        else:
-            return sampled_rows.sample(self.params.num_style_examples, replace=True)[["text", "label"]].to_dict(orient="records")
+        return len(self.sequences)
 
     def __getitem__(self, idx: int) -> Dict[str, torch.Tensor]:
         sampled_texts = []
@@ -75,7 +66,7 @@ if __name__ == "__main__":
     # df.rename(columns={"target": "label"}, inplace=True)
     print(df)
     print(unique)
-    preprocessed_dataset = PreprocessedClassificationDataset(args, df)
+    preprocessed_dataset = ClassificationDataset(args, df)
 
     batch = []
     for i in range(4):
