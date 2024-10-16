@@ -47,7 +47,7 @@ class MlmTuningModule(LightningModule):
                                                    pretrained_model_name_or_path="bowphs/GreBerta"),
             scheduler_type: SchedulerType = SchedulerType.LINEAR,
             optimizer: OptimizerCallable = lambda p: torch.optim.AdamW(p),
-            weight_decay: NonNegativeFloat = 0.0,
+            # weight_decay: NonNegativeFloat = 0.0,
             num_warmup_steps: NonNegativeInt = 0,
     ):
         super().__init__()
@@ -58,7 +58,7 @@ class MlmTuningModule(LightningModule):
         else:
             raise ValueError("Model must be an instance of AutoModelForMaskedLMWrapper")
 
-        self.weight_decay = weight_decay
+        # self.weight_decay = weight_decay
         self.optimizer_callable = optimizer
         self.lr_scheduler_type = scheduler_type
         self.num_warmup_steps = num_warmup_steps
@@ -88,7 +88,7 @@ class MlmTuningModule(LightningModule):
         optimizer_grouped_parameters = [
             {
                 "params": [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)],
-                "weight_decay": self.weight_decay,
+                # "weight_decay": self.weight_decay,
             },
             {
                 "params": [p for n, p in param_optimizer if any(nd in n for nd in no_decay)],
