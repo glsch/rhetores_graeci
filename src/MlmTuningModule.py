@@ -63,6 +63,8 @@ class MlmTuningModule(LightningModule):
         self.lr_scheduler_type = scheduler_type
         self.num_warmup_steps = num_warmup_steps
 
+        self.save_hyperparameters()
+
     def forward(self, batch):
         return self.model(batch)
 
