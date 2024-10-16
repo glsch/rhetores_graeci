@@ -94,6 +94,7 @@ if __name__ == "__main__":
 
     print(len(mlm_dataset.labels))
     print(mlm_dataset.id2label)
+    print(len(mlm_dataset.df.siglum.unique().tolist()))
 
         # print(model(**b))
 
