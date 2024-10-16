@@ -109,13 +109,28 @@ class MlmTuningModule(LightningModule):
         logger.info(f"ModelForTransferMLM.configure_optimizers() -- Num training steps: {num_training_steps}, {type(num_training_steps)}")
         logger.info(f"ModelForTransferMLM.configure_optimizers() -- Num processes: {os.cpu_count()}")
 
-        lr_scheduler = get_scheduler(
+        scheduler = get_scheduler(
             name=self.lr_scheduler_type,
             optimizer=optimizer,
             num_warmup_steps=self.num_warmup_steps,
             num_training_steps=num_training_steps
         )
 
-        logger.info(f"MlmTuningModule.configure_optimizers() -- Using scheduler: {lr_scheduler}, {type(lr_scheduler)}, {lr_scheduler.__class__.__name__}")
+        return {
+            "optimizer": optimizer,
+            "lr_scheduler": {
+                "scheduler": scheduler,
+                "interval": "step",  # Call scheduler.step() after each training step
+            },
+        }
 
-        return [optimizer], [lr_scheduler]
+        # lr_scheduler = get_scheduler(
+        #     name=self.lr_scheduler_type,
+        #     optimizer=optimizer,
+        #     num_warmup_steps=self.num_warmup_steps,
+        #     num_training_steps=num_training_steps
+        # )
+        #
+        # logger.info(f"MlmTuningModule.configure_optimizers() -- Using scheduler: {lr_scheduler}, {type(lr_scheduler)}, {lr_scheduler.__class__.__name__}")
+        #
+        # return [optimizer], [lr_scheduler]

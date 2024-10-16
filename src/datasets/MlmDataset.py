@@ -17,7 +17,7 @@ from src.logger_config import logger
 
 from src.datasets.PandasDataset import PandasDataset
 
-from transformers import PreTrainedTokenizer, AutoTokenizer
+from transformers import PreTrainedTokenizer, PreTrainedTokenizerFast, AutoTokenizer
 
 tqdm.pandas()
 
@@ -28,7 +28,7 @@ class MLMDataset(Dataset):
 
     def __init__(
             self,
-            tokenizer: PreTrainedTokenizer,
+            tokenizer: Union[PreTrainedTokenizer, PreTrainedTokenizerFast],
             df: pd.DataFrame,
             split: Literal["train", "val", "test"] = "train",
     ):
