@@ -1,0 +1,11 @@
+# python==3.12.3
+lightning==2.4.0
+transformers==4.45.2
+torch==2.4.1
+torchmetrics==1.4.3
+pandas==2.2.3
+beautifulsoup4==4.12.3
+selenium==4.25.0
+jsonargparse==4.33.2
+gdown==5.2.0
+

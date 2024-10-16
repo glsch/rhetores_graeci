@@ -4,15 +4,15 @@
       "root": ".",
       "data": {
         "local": "./data",
-        "server": "/vol/tensusers2/gschmidt/language_models_for_greek_rhetoricians/data",
+        "server": "/vol/tensusers2/gschmidt/rhetores_graeci/data",
         "colab": "./data"
       },
       "raw": "raw",
       "preprocessed": "preprocessed",
       "output": {
-        "server": "/vol/tensusers2/gschmidt/language_models_for_greek_rhetoricians/output",
+        "server": "/vol/tensusers2/gschmidt/rhetores_graeci/output",
         "local":  "./output",
-        "colab": "/content/drive/MyDrive/language_models_for_greek_rhetoricians/output"
+        "colab": "/content/drive/MyDrive/rhetores_graeci/output"
       },
       "models": "models",
       "access_key": "./access_key.txt",

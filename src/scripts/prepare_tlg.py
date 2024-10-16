@@ -13,7 +13,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
 from webdriver_manager.chrome import ChromeDriverManager
 
-from ..PathManager import PathManager
+from ..path_manager import PathManager
 
 text_children = {}
 
@@ -331,6 +331,8 @@ def main():
     dataset = concat_csvs_from_folder(args.output_path, exclude_fname=[args.author_metadata_fname])
 
     dataset.to_csv(os.path.join(args.output_path, "dataset.csv"), index=False)
+
+    driver.close()
 
     if args.zip:
         compress_csv_files_to_zip([os.path.join(args.output_path, "dataset.csv"), author_metadata_path], os.path.join(args.output_path, "tlg_dataset.zip"))

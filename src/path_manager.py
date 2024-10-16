@@ -24,8 +24,6 @@ class PathManager:
     tokenizer_basename = None
     classifier_basename = None
 
-    os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
     def __new__(cls):
 
         location = os.getenv("LOCATION", "local")
@@ -33,7 +31,7 @@ class PathManager:
         if cls._instance is None:
             cls._instance = super(PathManager, cls).__new__(cls)
 
-            with open("config.json", 'r') as f:
+            with open("paths.json", 'r') as f:
                 config = json.load(f)
 
                 cls.root_path = cls.path_exists(config["path"]["root"], create_path=False)
