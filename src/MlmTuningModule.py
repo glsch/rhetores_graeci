@@ -55,6 +55,7 @@ class MlmTuningModule(LightningModule):
         self.model = model
         if isinstance(model, AutoModelForMaskedLMWrapper):
             self.tokenizer = AutoTokenizer.from_pretrained(self.model.pretrained_model_name_or_path)
+        else:
             raise ValueError("Model must be an instance of AutoModelForMaskedLMWrapper")
 
         self.weight_decay = weight_decay
