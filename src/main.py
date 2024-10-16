@@ -54,7 +54,7 @@ class RhetoresGraecigCli(LightningCLI):
         callbacks = [
             {"class_path": "lightning.pytorch.callbacks.ModelCheckpoint"},
             {"class_path": "lightning.pytorch.callbacks.LearningRateMonitor",
-             "init_args": {"logging_interval": "epoch", "log_weight_decay": True}},
+             "init_args": {"logging_interval": "epoch"}},
             # lazy_instance(SaveConfigCallback)
         ]
 
