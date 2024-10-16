@@ -37,7 +37,7 @@ class AutoModelForMaskedLMWrapper(torch.nn.Module):
             self.model = AutoModelForMaskedLM.from_pretrained(pretrained_model_name_or_path=self.pretrained_model_name_or_path)
 
     def forward(self, x):
-        return self.model(x)
+        return self.model(**x)
 
 class MlmTuningModule(LightningModule):
 
@@ -64,7 +64,7 @@ class MlmTuningModule(LightningModule):
         self.num_warmup_steps = num_warmup_steps
 
     def forward(self, batch):
-        return self.model(**batch)
+        return self.model(batch)
 
     def _process_batch(self, batch, stage="train"):
         output = self.forward(batch)
