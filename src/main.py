@@ -75,7 +75,7 @@ class RhetoresGraecigCli(LightningCLI):
             "data.epithets": default_epithets,
             # # this does not work correctly as config would contain a 'proj_size' key which is only supported by LSTM, but is
             # # also present in the config for any subclass of RNNBase
-            # "model.init_args.model": {"class_path": "transformers.RobertaForSequenceClassification",},
+            #"model.scheduler_type": {"class_path": "transformers.SchedulerType.COSINE"},
             # "model.postprocessing": {"class_path": "src.models.clustering.normalizers.Pipeline",
             #                          "init_args": {"steps": default_postprocessing}},
             # "model.noise": {"class_path": "src.models.clustering.RnnClusterer.GaussianNoise",
