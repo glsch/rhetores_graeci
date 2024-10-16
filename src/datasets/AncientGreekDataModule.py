@@ -79,6 +79,7 @@ class AncientGreekDataModule(LightningDataModule):
             if not (os.path.exists(self.dataset_path) and os.path.exists(self.author_metadata_path)):
                 download_dataset()
 
+        if not os.path.exists(os.path.join(PathManager.data_path, "preprocessed", "preprocessed_dataset.csv")):
             # opening dataset and metadata
             pd_dataset = PandasDataset(dataset_path=self.dataset_path, author_metadata_path=self.author_metadata_path)
 
