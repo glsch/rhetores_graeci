@@ -45,7 +45,7 @@ class MlmTuningModule(LightningModule):
             self,
             model: torch.nn.Module = lazy_instance(AutoModelForMaskedLMWrapper,
                                                    pretrained_model_name_or_path="bowphs/GreBerta"),
-            scheduler_type: SchedulerType = SchedulerType.COSINE,
+            scheduler_type: SchedulerType = SchedulerType.COSINE.value,
             optimizer: OptimizerCallable = lambda p: torch.optim.AdamW(p),
             # weight_decay: NonNegativeFloat = 0.0,
             num_warmup_steps: NonNegativeInt = 0,
