@@ -37,7 +37,7 @@ class MLMDataset(Dataset):
         self.tokenizer = tokenizer
         logger.info(f"MLMDataset.__init__() -- Using tokenizer with vocab_size: {self.tokenizer.vocab_size}")
 
-        self.sequences = df["chunks"].tolist()
+        self.sequences = df["text"].tolist()
 
     def __len__(self):
         return len(self.sequences)

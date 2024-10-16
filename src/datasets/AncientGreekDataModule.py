@@ -167,6 +167,8 @@ class AncientGreekDataModule(LightningDataModule):
 
             self.dataset = dataset
 
+            self.dataset.drop(columns=["text"], inplace=True)
+
             self.dataset = self.dataset.assign(split="train")
 
             self.dataset = self.dataset.sample(frac=1.0)
@@ -177,6 +179,8 @@ class AncientGreekDataModule(LightningDataModule):
 
             self.test = self.dataset.iloc[int(0.9 * self.dataset.shape[0]):]
             self.dataset.loc[self.test.index, "split"] = "test"
+
+            self.dataset.rename(columns={"chunks": "text"}, inplace=True)
 
             self.dataset.to_csv(os.path.join(PathManager.data_path, "preprocessed_dataset.csv"), index=False)
 
