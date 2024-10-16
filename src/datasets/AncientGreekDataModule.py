@@ -183,7 +183,7 @@ class AncientGreekDataModule(LightningDataModule):
     def setup(self, stage: str) -> None:
         dataset_cls = None
         self.collate_fn = None
-        self.dataset = self.dataset.read_csv(os.path.join(PathManager.data_path, "preprocessed_dataset.csv"))
+        self.dataset = pd.read_csv(os.path.join(PathManager.data_path, "preprocessed_dataset.csv"))
 
         self.train_df = self.dataset[self.dataset["split"] == "train"]
         self.val_df = self.dataset[self.dataset["split"] == "val"]
