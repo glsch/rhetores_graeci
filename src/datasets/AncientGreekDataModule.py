@@ -195,13 +195,13 @@ class AncientGreekDataModule(LightningDataModule):
         self.test_df = self.dataset[self.dataset["split"] == "test"]
 
         if isinstance(self.trainer.model.model, AutoModelForMaskedLMWrapper):
-            logger.info(f"AncientGreekDataModule.setup() -- Model is subclass of {AutoModelForMaskedLMWrapper}: {self.trainer.model}")
+            logger.info(f"AncientGreekDataModule.setup() -- Model is subclass of {AutoModelForMaskedLMWrapper}: {self.trainer.model.model.__class__.__name__}")
             dataset_cls = MLMDataset
             self.collate_fn = DataCollatorForLanguageModeling(tokenizer=self.tokenizer, mlm=True, mlm_probability=0.15)
 
         else:
             logger.info(
-                f"AncientGreekDataModule.setup() -- Model is {self.trainer.model} {self.trainer.model.__class__} {self.trainer.model.__class__.__name__} {self.trainer.model.__dir__}")
+                f"AncientGreekDataModule.setup() -- Model is {self.trainer.model.model} {self.trainer.model.model.__class__} {self.trainer.model.model.__class__.__name__} {self.trainer.model.model.__dir__}")
             raise ValueError("Invalid model")
 
         if stage == "fit":
