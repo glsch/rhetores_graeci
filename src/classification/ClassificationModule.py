@@ -53,7 +53,7 @@ class ClassificationModule(LightningModule):
         self.lr_scheduler_type = scheduler_type
         self.num_warmup_steps = num_warmup_steps
         self.confidence_threshold = confidence_threshold
-        self.base_transfromer = base_transformer
+        self.base_transformer = base_transformer
 
         self.model = self.model_class.from_pretrained(pretrained_model_name_or_path=self.base_transformer, num_labels=self.num_labels, id2label=self.id2label)
 
