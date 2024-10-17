@@ -74,8 +74,8 @@ class ClassificationModule(LightningModule):
         except:
             raise ValueError("Number of classes not set in the datamodule")
 
-    def forward(self, x):
-        return self.model(x)
+    def forward(self, batch):
+        return self.model(batch)
 
     def training_step(self, batch, batch_idx):
         outputs = self._process_batch(batch, stage="train")
