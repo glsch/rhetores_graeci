@@ -242,9 +242,20 @@ class AncientGreekDataModule(LightningDataModule):
                 val_df = val_df.assign(split="val")
                 test_df = test_df.assign(split="test")
 
+                logger.info("AncientGreekDataModule.prepare_data() -- Creating dataset")
+                self.dataset = pd.concat([train_df, val_df, test_df, unk_df, predict_df])
+                logger.info(f"AncientGreekDataModule.prepare_data() -- Number of authors full dataset: {self.dataset['author_id'].unique().tolist()}")
+                logger.info(f"AncientGreekDataModule.prepare_data() -- Number of authors train df: {train_df['author_id'].unique().tolist()}")
+                logger.info(f"AncientGreekDataModule.prepare_data() -- Number of authors unk_df: {unk_df['author_id'].unique().tolist()}")
+                logger.info(f"AncientGreekDataModule.prepare_data() -- Number of authors val_df: {val_df['author_id'].unique().tolist()}")
+
+                logger.info(f"AncientGreekDataModule.prepare_data() -- Max samples: {self.dataset.groupby('author_id').value_counts().max()}")
+                logger.info(f"AncientGreekDataModule.prepare_data() -- Min samples: {self.dataset.groupby('author_id').value_counts().min()}")
+
+                logger.info(f"AncientGreekDataModule.prepare_data() -- Dataset columns: {self.dataset.columns}")
+
                 # todo: add label encoding somewhere here
 
-                self.dataset = pd.concat([train_df, val_df, test_df, unk_df, predict_df])
 
             self.dataset.to_csv(os.path.join(PathManager.data_path, "preprocessed", f"{self.fname}.csv"), index=False)
         else:
