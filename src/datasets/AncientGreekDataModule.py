@@ -4,7 +4,7 @@ import os.path
 from typing import List, Union, Type
 from typing import ForwardRef
 
-
+import transformers.models.auto
 from tqdm import tqdm
 tqdm.pandas()
 
@@ -44,7 +44,7 @@ def resolve_forward_ref(ref: Union[str, ForwardRef, Type]):
 
 class AncientGreekDataModule(LightningDataModule):
     def __init__(self,
-                 model_class: Union[AutoModelForMaskedLM, AutoModelForSequenceClassification],
+                 model_class: Union[Type[AutoModelForMaskedLM], Type[AutoModelForSequenceClassification]] = transformers.models.auto.AutoModelForSequenceClassification,
                  base_transformer: str = "bowphs/GreBerta",
                  epithets: List[str]=None,
                  chunk_type: TextChunkType = TextChunkType.CHUNK,
