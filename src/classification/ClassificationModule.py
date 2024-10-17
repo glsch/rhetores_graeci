@@ -69,10 +69,8 @@ class ClassificationModule(LightningModule):
 
     def on_train_start(self) -> None:
         logger.info(f"ClassificationModule.on_train_start() -- Number of classes: {self.num_classes}")
-        try:
-            self.model.config.num_labels = self.trainer.datamodule._num_classes
-        except:
-            raise ValueError("Number of classes not set in the datamodule")
+        self.model.config.num_labels = self.num_classes
+        self.model.config.id2label = self.self.trainer.datamodule.id2label
 
     def forward(self, batch):
         return self.model(batch)
