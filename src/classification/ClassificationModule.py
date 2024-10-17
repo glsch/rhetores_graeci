@@ -296,6 +296,8 @@ class ClassificationModule(LightningModule):
 
         df_final = df_final.assign(author_name=df_final['siglum'].apply(lambda x: self.id2label[x]))
 
+        print(df_final)
+
         return df_final
 
         # unique_sigla, counts = torch.unique(sorted_sigla, return_counts=True)
