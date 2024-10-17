@@ -51,14 +51,14 @@ class AncientGreekDataModule(LightningDataModule):
         self.dataset_path = PathManager.dataset_path
         self.author_metadata_path = PathManager.author_metadata_path
         self.base_transformer = base_transformer
-        self.model_class = model_class
+        self.model_class = model_class()
 
         self.fname = "preprocessed_dataset"
         logger.info(f"AncientGreekDataModule.__init__() -- Model class: {self.model_class}, Type: {Type[self.model_class]}")
         logger.info(f"AncientGreekDataModule.__init__() -- Target model class: {Type[AutoModelForMaskedLM]}")
-        if self.model_class == Type[AutoModelForMaskedLM]:
+        if self.model_class == AutoModelForMaskedLM:
             self.task = "mlm"
-        elif self.model_class == Type[AutoModelForSequenceClassification]:
+        elif self.model_class == AutoModelForSequenceClassification:
             self.task = "classification"
         else:
             raise ValueError(f"Invalid model class! Expected 'AutoModelForSequenceClassification' or 'AutoModelForMaskedLM', got {self.model_class}")
