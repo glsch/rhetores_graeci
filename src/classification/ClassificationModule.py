@@ -35,9 +35,11 @@ class AutoModelForSequenceClassificationWrapper(torch.nn.Module):
 
     def forward(self, x):
         logger.info(f"AutoModelForSequenceClassificationWrapper -- Model type: {type(self.model)}, {self.model.__class__.__name__}")
-        logger.info(f"AutoModelForSequenceClassificationWrapper -- {x}")
+        logger.info(f"AutoModelForSequenceClassificationWrapper -- {x['input_ids'].shape}")
+        logger.info(f"AutoModelForSequenceClassificationWrapper -- {x['labels'].shape}")
         #if "labels" in x:
         #    del x["labels"]
+
         return self.model.forward(input_ids=x["input_ids"], attention_mask=x["attention_mask"], labels=x["labels"])
 
 class ClassificationModule(LightningModule):
