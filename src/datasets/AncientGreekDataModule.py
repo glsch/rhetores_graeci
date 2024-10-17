@@ -2,6 +2,7 @@ import ast
 import enum
 import os.path
 from typing import List, Union, Type
+from typing import ForwardRef
 
 from tqdm import tqdm
 tqdm.pandas()
