@@ -266,6 +266,9 @@ class ClassificationModule(LightningModule):
             self.get_per_chapter_stats(stage="predict")
 
     def get_per_chapter_stats(self, stage="predict"):
+        path = self.trainer.logger.experiment.dir
+        if path is None:
+            path = self.trainer.default_root_dir
         save_dir = self.trainer.logger.save_dir if self.trainer.logger.save_dir is not None else self.trainer.default_root_dir
         logger.debug(f"ClassificationModule.compute_metrics() -- Saving the plot to {save_dir}")
 
@@ -298,7 +301,7 @@ class ClassificationModule(LightningModule):
             top5 = df_final[df_final["siglum"] == chapter].melt(id_vars=["siglum"], var_name="class", value_name="probability").sort_values(by="probability", ascending=False).head(5)
             results = pd.concat([results, top5])
 
-        results.to_csv(os.path.join(save_dir, f"chapter_predictions_{self.base_transformer.replace('/', '_')}.csv"), index=False)
+        results.to_csv(os.path.join(path, f"chapter_predictions_{self.base_transformer.replace('/', '_')}.csv"), index=False)
 
         return results
 
