@@ -45,7 +45,7 @@ class ClassificationDataset(Dataset):
             truncation=True,
             padding="max_length",
         )
-        tokenized["label"] = self.records[idx]["target"]
+        tokenized["label"] = self.records[idx]["label"]
 
         return tokenized
 
