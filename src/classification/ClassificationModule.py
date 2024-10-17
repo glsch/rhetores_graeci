@@ -272,7 +272,6 @@ class ClassificationModule(LightningModule):
         all_logits = torch.cat(self.epoch_outputs[stage], dim=0).cpu().detach()
         all_sigla = torch.cat(self.sigla, dim=0).cpu().detach()
 
-        # Sort sigla and logits
         sorted_sigla, indices = torch.sort(all_sigla, dim=0)
         sorted_logits = all_logits[indices]
 
@@ -281,12 +280,10 @@ class ClassificationModule(LightningModule):
         sigla_np = sorted_sigla.cpu().numpy()
         probs_np = probabilities.cpu().numpy()
 
-        # Create a DataFrame
         df = pd.DataFrame(probs_np)
         df['siglum'] = sigla_np
 
         df_melted = df.melt(id_vars=['siglum'], var_name='class', value_name='probability')
-
 
         df_grouped = df_melted.groupby(['siglum', 'class'])['probability'].mean().reset_index()
         df_final = df_grouped.pivot(index='siglum', columns='class', values='probability').reset_index()
@@ -294,7 +291,7 @@ class ClassificationModule(LightningModule):
         df_final.columns.name = None
         df_final = df_final.rename(columns={col: f'class_{col}' for col in df_final.columns if col != 'siglum'})
 
-        df_final = df_final.assign(author_name=df_final['siglum'].apply(lambda x: self.id2label[x]))
+        df_final = df_final.assign(author_name=df_final['class'].apply(lambda x: self.id2label[x]))
 
         print(df_final)
 
