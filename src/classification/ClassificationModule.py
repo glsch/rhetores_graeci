@@ -38,7 +38,7 @@ class AutoModelForSequenceClassificationWrapper(torch.nn.Module):
         logger.info(f"AutoModelForSequenceClassificationWrapper -- {x}")
         #if "labels" in x:
         #    del x["labels"]
-        return self.model.forward(x)
+        return self.model.forward(**x)
 
 class ClassificationModule(LightningModule):
     def __init__(
