@@ -300,7 +300,7 @@ class ClassificationModule(LightningModule):
             avg_top5_indices = top5_indices.mode(dim=0).values
 
             # Convert indices to labels
-            top5_labels = [self.is2label[idx.item()] for idx in avg_top5_indices]
+            top5_labels = [self.id2label[idx.item()] for idx in avg_top5_indices]
 
             # Store results
             result = {
