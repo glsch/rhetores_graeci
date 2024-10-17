@@ -445,7 +445,7 @@ class AncientGreekDataModule(LightningDataModule):
     def predict_dataloader(self):
         sampler = None
         loader = DataLoader(
-            self.test_dataset,
+            self.predict_dataset,
             batch_size=1,
             collate_fn=self.collate_fn,
             sampler=sampler,

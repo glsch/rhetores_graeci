@@ -54,7 +54,7 @@ class ClassificationDataset(Dataset):
 
         tokenized["label"] = self.records[idx]["label"]
 
-        print(tokenized)
+        # print(tokenized)
 
         return tokenized
 
