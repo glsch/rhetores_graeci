@@ -135,6 +135,9 @@ class ClassificationModule(LightningModule):
         }
 
     def _process_batch(self, batch, stage="train") -> SequenceClassifierOutput:
+        logger.info(f"ClassificationModule._process_batch() -- Processing batch for stage: {stage}")
+        logger.info(f"ClassificationModule._process_batch() -- Batch input_ids: {batch.input_ids.shape}")
+        logger.info(f"ClassificationModule._process_batch() -- Batch labels: {batch.labels.shape}")
         classifier_output = self(batch)
         self.log(f"{stage}/loss", classifier_output.loss, on_step=False, on_epoch=True, prog_bar=True, logger=True)
 
