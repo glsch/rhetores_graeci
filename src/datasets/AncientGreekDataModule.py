@@ -65,6 +65,15 @@ class AncientGreekDataModule(LightningDataModule):
 
         assert isinstance(self.epithets, list), "Epithets must be a list"
 
+        self.fname = "preprocessed_dataset"
+        self.task = "mlm"
+        if isinstance(self.trainer.model.model, AutoModelForMaskedLMWrapper):
+            self.fname = "mlm_" + self.fname
+            self.task = "mlm"
+        elif isinstance(self.trainer.model.model, AutoModelForSequenceClassificationWrapper):
+            self.fname = "classification_" + self.fname
+            self.task = "classification"
+
         self.dataset = None
 
         self.save_hyperparameters()
@@ -176,38 +185,59 @@ class AncientGreekDataModule(LightningDataModule):
             self.dataset.drop(columns=["text"], inplace=True)
 
             self.dataset = self.dataset.assign(split="train")
-
-            self.dataset = self.dataset.sample(frac=1.0)
-            self.train = self.dataset.iloc[:int(0.8 * self.dataset.shape[0])]
-            self.dataset.loc[self.train.index, "split"] = "train"
-            self.val = self.dataset.iloc[int(0.8 * self.dataset.shape[0]):int(0.9 * self.dataset.shape[0])]
-            self.dataset.loc[self.val.index, "split"] = "val"
-
-            self.test = self.dataset.iloc[int(0.9 * self.dataset.shape[0]):]
-            self.dataset.loc[self.test.index, "split"] = "test"
-
             self.dataset.rename(columns={"chunks": "text"}, inplace=True)
 
-            self.dataset.to_csv(os.path.join(PathManager.data_path, "preprocessed", f"preprocessed_dataset.csv"), index=False)
+            self.dataset = self.dataset.reset_index(drop=True)
+
+            if self.task == "mlm":
+                self.dataset = self.dataset.sample(frac=1.0)
+                self.train = self.dataset.iloc[:int(0.8 * self.dataset.shape[0])]
+                self.dataset.loc[self.train.index, "split"] = "train"
+                self.val = self.dataset.iloc[int(0.8 * self.dataset.shape[0]):int(0.9 * self.dataset.shape[0])]
+                self.dataset.loc[self.val.index, "split"] = "val"
+
+                self.test = self.dataset.iloc[int(0.9 * self.dataset.shape[0]):]
+                self.dataset.loc[self.test.index, "split"] = "test"
+
+            elif self.task == "classification":
+                logger.info(f"AncientGreekDataModule.prepare_data() -- Creating classification dataset")
+
+                # retain only the authors for the study
+                self.dataset = self.dataset[self.dataset["author_id"].isin(study_author_ids) | self.dataset["author_id"].isin(unk_author_ids)]
+                # Dionysius Ars Rhetorica goes to predict corpus
+                predict_df = self.dataset[self.dataset["author_id"] == 81 & self.dataset["work_id"] == 16]
+                predict_df = predict_df.assign(split="predict")
+
+                self.dataset = self.dataset[~(self.dataset["author_id"] == 81 & self.dataset["work_id"] == 16)]
+
+                # all minor authors go to UNK, which will only be in the test set
+                # therefore, we can create the base of this dataset
+                unk_df = self.dataset[self.dataset["author_id"].isin(unk_author_ids)]
+                unk_df = unk_df.assign(split="test")
+
+                # the rest is used for training and validation
+                self.dataset = self.dataset[~self.dataset["author_id"].isin(unk_author_ids)]
+
+                train_df = self.dataset.groupby("author_id").sample(frac=.75)
+                train_df = train_df.assign(split="train")
+
+                val_df = self.dataset[~self.dataset.index.isin(train_df.index)]
+                test_df = val_df.groupby("author_id").sample(frac=.5)
+                val_df = val_df[~val_df.index.isin(test_df.index)]
+                val_df = val_df.assign(split="val")
+                test_df = test_df.assign(split="test")
+
+                # todo: add label encoding somewhere here
+
+                self.dataset = pd.concat([train_df, val_df, test_df, unk_df, predict_df])
+
+            self.dataset.to_csv(os.path.join(PathManager.data_path, "preprocessed", f"{self.fname}.csv"), index=False)
 
         else:
-            self.dataset = pd.read_csv(os.path.join(PathManager.data_path, "preprocessed", f"preprocessed_dataset.csv"))
+            self.dataset = pd.read_csv(os.path.join(PathManager.data_path, "preprocessed", f"{self.fname}.csv"))
 
 
     def setup(self, stage: str) -> None:
-        self.fname = "preprocessed_dataset"
-        self.task = None
-        if isinstance(self.trainer.model.model, AutoModelForMaskedLMWrapper):
-            self.fname = "mlm_" + self.fname
-            self.task = "mlm"
-        elif isinstance(self.trainer.model.model, AutoModelForSequenceClassificationWrapper):
-            self.fname = "classification_" + self.fname
-            self.task = "classification"
-        else:
-            raise ValueError("Invalid model")
-
-        assert self.task is not None, "Task must be set"
-
         dataset_cls = None
         self.collate_fn = None
         self.dataset = pd.read_csv(os.path.join(PathManager.data_path, "preprocessed", f"{self.fname}.csv"))

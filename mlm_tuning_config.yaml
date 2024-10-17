@@ -75,7 +75,7 @@ trainer:
       monitor: val/loss
       min_delta: 0.01
       patience: 3
-      verbose: false
+      verbose: true
       mode: min
       strict: true
       check_finite: true

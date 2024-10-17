@@ -88,13 +88,19 @@ class PandasDataset:
             for value in values:
                 yield df[column].str.contains(value)
 
+        # authors for the study
+        study_author_ids = [284, 87, 607, 640, 594, 2002, 2178, 613, 1376, 592, 649, 560, 2586, 2903, 616, 605,
+                            2027, 81]
+        # authors which constituted UNK category in the article
+        unk_author_ids = [607, 594, 2002, 2178, 649, 560, 186, 2903, 605]
+
         expression = pd.concat(contains_epithet_generator(self.author_metadata_df, "epithet", epithets), axis=1).any(
             axis=1)
         filtered_by_epithet = self.author_metadata_df[
             self.author_metadata_df["epithet"].notna()
             & (expression
             # adding DIONYSIUS HALICARNASSENSIS, too
-               | (self.author_metadata_df["author_id"] == 81))][
+               | (self.author_metadata_df["author_id"].isin(study_author_ids)) | self.author_metadata_df["author_id"].isin(unk_author_ids))][
             ["epithet", "author_id", "author", "period"]].sort_values(by="author", ascending=True)
 
         return filtered_by_epithet

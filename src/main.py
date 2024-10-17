@@ -57,7 +57,7 @@ class RhetoresGraecigCli(LightningCLI):
             {"class_path": "lightning.pytorch.callbacks.LearningRateMonitor",
              "init_args": {"logging_interval": "step"}},
             {"class_path": "src.callbacks.PushToHuggingfaceCallback", "init_args": {"repo_owner": "glsch"}},
-            {"class_path": "lightning.pytorch.callbacks.EarlyStopping", "init_args": {"min_delta": 0.01, "patience": 3, "monitor": "val/loss", "mode": "min", "check_on_train_epoch_end": False}},
+            {"class_path": "lightning.pytorch.callbacks.EarlyStopping", "init_args": {"min_delta": 0.01, "patience": 3, "monitor": "val/loss", "mode": "min", "check_on_train_epoch_end": False, "verbose": True}},
             # lazy_instance(SaveConfigCallback)
         ]
 
