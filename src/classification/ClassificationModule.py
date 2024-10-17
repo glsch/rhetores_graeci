@@ -300,61 +300,7 @@ class ClassificationModule(LightningModule):
 
         results.to_csv(os.path.join(save_dir, f"chapter_predictions_{self.base_transformer.replace('/', '_')}.csv"), index=False)
 
-        return df_final
-
-        # unique_sigla, counts = torch.unique(sorted_sigla, return_counts=True)
-
-
-
-        # # Get unique sigla values and their counts
-        # unique_sigla, counts = torch.unique(sorted_sigla, return_counts=True)
-        #
-        # # Calculate cumulative sum of counts to use as indices
-        # cumsum_counts = torch.cat([torch.tensor([0]).cpu().detach(), torch.cumsum(counts, dim=0)[:-1].cpu().detach()])
-        #
-        # # Initialize list to store results
-        # results = []
-        #
-        # # Iterate over unique sigla values
-        # for i, sigla in enumerate(unique_sigla):
-        #     # Get logits for this sigla
-        #     start_idx = cumsum_counts[i]
-        #     end_idx = start_idx + counts[i]
-        #     sigla_probs = probabilities[start_idx:end_idx]
-        #
-        #     # Get top-5 predictions
-        #     top5_logits, top5_indices = torch.topk(sigla_probs, k=5, dim=1)
-        #
-        #     # Calculate average of top-5 predictions
-        #     avg_top5 = top5_logits.mean(dim=0)
-        #     avg_top5_indices = top5_indices.mode(dim=0).values
-        #
-        #     # Convert indices to labels
-        #     top5_labels = [self.id2label[idx.item()] for idx in avg_top5_indices]
-        #
-        #     # Store results
-        #     result = {
-        #         'sigla': sigla.item(),
-        #         'avg_top1': avg_top5[0].item(),
-        #         'avg_top2': avg_top5[1].item(),
-        #         'avg_top3': avg_top5[2].item(),
-        #         'avg_top4': avg_top5[3].item(),
-        #         'avg_top5': avg_top5[4].item(),
-        #         'top1_label': top5_labels[0],
-        #         'top2_label': top5_labels[1],
-        #         'top3_label': top5_labels[2],
-        #         'top4_label': top5_labels[3],
-        #         'top5_label': top5_labels[4],
-        #     }
-        #     results.append(result)
-        #
-        # df = pd.DataFrame(results)
-        #
-        # for i, r in enumerate(df.iterrows()):
-        #     print(r)
-
-        return df
-
+        return results
 
     def configure_optimizers(self):
         no_decay = ["bias",
