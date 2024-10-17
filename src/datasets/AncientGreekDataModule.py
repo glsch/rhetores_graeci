@@ -35,6 +35,7 @@ class TextChunkType(enum.Enum):
 class AncientGreekDataModule(LightningDataModule):
     def __init__(self,
                  tokenizer: Union[PreTrainedTokenizer, PreTrainedTokenizerFast]=None,
+                 model: torch.nn.Module=None,
                  epithets: List[str]=None,
                  chunk_type: TextChunkType = TextChunkType.CHUNK,
                  batch_size: NonNegativeInt = 1,
@@ -48,6 +49,13 @@ class AncientGreekDataModule(LightningDataModule):
         super().__init__()
         self.dataset_path = PathManager.dataset_path
         self.author_metadata_path = PathManager.author_metadata_path
+        self.task = "mlm"
+        self.fname = "preprocessed_dataset"
+        if isinstance(model, AutoModelForMaskedLMWrapper):
+            self.fname = "mlm_" + self.fname
+        elif isinstance(model, AutoModelForSequenceClassificationWrapper):
+            self.task = "classification"
+            self.fname = "classification_" + self.fname
 
         self.tokenizer = tokenizer
         self.chunk_type = chunk_type
@@ -65,14 +73,14 @@ class AncientGreekDataModule(LightningDataModule):
 
         assert isinstance(self.epithets, list), "Epithets must be a list"
 
-        # self.fname = "preprocessed_dataset"
+        #
         # self.task = "mlm"
         #
         # if isinstance(self.trainer.model.model, AutoModelForMaskedLMWrapper):
-        #     self.fname = "mlm_" + self.fname
+        #
         #     self.task = "mlm"
         # elif isinstance(self.trainer.model.model, AutoModelForSequenceClassificationWrapper):
-        #     self.fname = "classification_" + self.fname
+        #
         #     self.task = "classification"
 
         self.dataset = None
@@ -232,17 +240,17 @@ class AncientGreekDataModule(LightningDataModule):
 
                 self.dataset = pd.concat([train_df, val_df, test_df, unk_df, predict_df])
 
-            #self.dataset.to_csv(os.path.join(PathManager.data_path, "preprocessed", f"{self.fname}.csv"), index=False)
-            self.dataset.to_csv(os.path.join(PathManager.data_path, "preprocessed", f"preprocessed_dataset.csv"), index=False)
+            self.dataset.to_csv(os.path.join(PathManager.data_path, "preprocessed", f"{self.fname}.csv"), index=False)
+
 
         else:
-            self.dataset = pd.read_csv(os.path.join(PathManager.data_path, "preprocessed", f"preprocessed_dataset.csv"))
+            self.dataset = pd.read_csv(os.path.join(PathManager.data_path, "preprocessed", f"{self.fname}.csv"))
 
 
     def setup(self, stage: str) -> None:
         dataset_cls = None
         self.collate_fn = None
-        self.dataset = pd.read_csv(os.path.join(PathManager.data_path, "preprocessed", f"preprocessed_dataset.csv"))
+        self.dataset = pd.read_csv(os.path.join(PathManager.data_path, "preprocessed", f"{self.fname}.csv"))
 
         self.train_df = self.dataset[self.dataset["split"] == "train"]
         self.val_df = self.dataset[self.dataset["split"] == "val"]
