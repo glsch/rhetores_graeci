@@ -48,6 +48,8 @@ class PushToHuggingfaceCallback(Callback):
         if path is None:
             path = trainer.default_root_dir
 
+        logger.info(f"PushToHuggingfaceCallback() -- Saving model to {path}")
+
         # saving the model and the corresponding tokenizer as huggingface models and tokenizer
         pl_module.model.tokenizer.save_pretrained(path)
         pl_module.model.model.save_pretrained(path)
@@ -58,6 +60,8 @@ class PushToHuggingfaceCallback(Callback):
         #     commit_message=f"Upload model after epoch {epoch}",
         #     use_auth_token=self.token
         # )
+
+        logger.info(f"PushToHuggingfaceCallback() -- Saving model to {path}")
 
         self.api.upload_folder(
             commit_message=f"Pushing after epoch {epoch}",
