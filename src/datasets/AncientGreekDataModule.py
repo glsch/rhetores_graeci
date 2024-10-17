@@ -338,8 +338,8 @@ class AncientGreekDataModule(LightningDataModule):
             # getting labels
             self._id2label = self.dataset[self.dataset["split"] != "predict"][["label", "target"]].drop_duplicates().set_index("label")["target"].to_dict()
             del self._id2label[-100]
-            self._label2id = {l: i for i, l in self.id2label.items()}
-            self._num_labels = len(self.id2label)
+            self._label2id = {l: i for i, l in self._id2label.items()}
+            self._num_labels = len(self._id2label)
             dataset_cls = ClassificationDataset
 
             self.collate_fn = DataCollatorWithPadding(return_tensors="pt", tokenizer=self.tokenizer, padding="max_length", max_length=512)
