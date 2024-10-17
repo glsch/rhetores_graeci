@@ -269,8 +269,8 @@ class ClassificationModule(LightningModule):
         save_dir = self.trainer.logger.save_dir if self.trainer.logger.save_dir is not None else self.trainer.default_root_dir
         logger.debug(f"ClassificationModule.compute_metrics() -- Saving the plot to {save_dir}")
 
-        all_logits = torch.cat(self.epoch_outputs[stage], dim=0)
-        all_sigla = torch.cat(self.sigla, dim=0)
+        all_logits = torch.cat(self.epoch_outputs[stage], dim=0).cpu().detach()
+        all_sigla = torch.cat(self.sigla, dim=0).cpu().detach()
 
         # Sort sigla and logits
         sorted_sigla, indices = torch.sort(all_sigla, dim=0)
@@ -280,7 +280,7 @@ class ClassificationModule(LightningModule):
         unique_sigla, counts = torch.unique(sorted_sigla, return_counts=True)
 
         # Calculate cumulative sum of counts to use as indices
-        cumsum_counts = torch.cat([torch.tensor([0]), torch.cumsum(counts, dim=0)[:-1]])
+        cumsum_counts = torch.cat([torch.tensor([0]).cpu().detach(), torch.cumsum(counts, dim=0)[:-1].cpu().detach()])
 
         # Initialize list to store results
         results = []
