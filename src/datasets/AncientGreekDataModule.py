@@ -59,7 +59,7 @@ class AncientGreekDataModule(LightningDataModule):
         self.dataset_path = PathManager.dataset_path
         self.author_metadata_path = PathManager.author_metadata_path
         self.base_transformer = base_transformer
-        self.model_class = resolve_forward_ref(model_class)
+        self.model_class = model_class
 
 
         self.fname = "preprocessed_dataset"
