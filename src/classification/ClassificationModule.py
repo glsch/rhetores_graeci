@@ -40,7 +40,7 @@ class AutoModelForSequenceClassificationWrapper(torch.nn.Module):
 class ClassificationModule(LightningModule):
     def __init__(
             self,
-            num_classes: NonNegativeInt=0,
+            num_classes: NonNegativeInt=None,
             model: torch.nn.Module = lazy_instance(AutoModelForSequenceClassificationWrapper, pretrained_model_name_or_path="bowphs/GreBerta"),
             optimizer: OptimizerCallable = lambda p: torch.optim.AdamW(p),
             scheduler_type: SchedulerType = SchedulerType.LINEAR,
@@ -135,6 +135,7 @@ class ClassificationModule(LightningModule):
         }
 
     def _process_batch(self, batch, stage="train") -> SequenceClassifierOutput:
+        assert self.num_classes is not None, "Number of classes must be set before processing a batch"
         logger.info(f"ClassificationModule._process_batch() -- Processing batch for stage: {stage}")
         logger.info(f"ClassificationModule._process_batch() -- Batch input_ids: {batch['input_ids'].shape}")
         logger.info(f"ClassificationModule._process_batch() -- Batch labels: {batch['labels'].shape}")
