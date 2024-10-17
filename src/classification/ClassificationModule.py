@@ -31,6 +31,8 @@ class AutoModelForSequenceClassificationWrapper(torch.nn.Module):
             else:
                 self.tokenizer = AutoTokenizer.from_pretrained("nlpaueb/bert-base-greek-uncased-v1")
 
+        logger.info(f"AutoModelForSequenceClassificationWrapper -- Config: {self.model.config}")
+
     def forward(self, x):
         logger.info(f"AutoModelForSequenceClassificationWrapper -- Model type: {type(self.model)}, {self.model.__class__.__name__}")
         logger.info(f"AutoModelForSequenceClassificationWrapper -- {x}")
