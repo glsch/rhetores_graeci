@@ -100,7 +100,7 @@ class RhetoresGraecigCli(LightningCLI):
 
         parser.link_arguments("model.tokenizer", "data.tokenizer", apply_on="instantiate")
         parser.link_arguments("model.model", "data.model", apply_on="instantiate")
-        parser.link_arguments("data.num_classes", "model.num_classes", apply_on="instantiate")
+        # parser.link_arguments("data.num_classes", "model.num_classes", apply_on="instantiate")
         # parser.link_arguments("model.tokenizer", "data.tokenizer", apply_on="instantiate")
         # parser.link_arguments("model.num_heads", "trainer.num_sanity_val_steps", apply_on="instantiate")
         #

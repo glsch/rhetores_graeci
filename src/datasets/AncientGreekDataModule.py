@@ -301,6 +301,7 @@ class AncientGreekDataModule(LightningDataModule):
             self.id2label = self.dataset[self.dataset["split"].isin(["train", "val"])][["label", "target"]].drop_duplicates().set_index("label")["target"].to_dict()
             self.label2id = {l: i for i, l in self.id2label.items()}
             self._num_classes = len(self.id2label)
+            self.trainer.model.num_classes = self._num_classes
             logger.info(
                 f"AncientGreekDataModule.setup() -- Model is subclass of {AutoModelForMaskedLMWrapper}: {self.trainer.model.model.__class__.__name__}")
             dataset_cls = ClassificationDataset

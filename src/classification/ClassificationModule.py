@@ -38,7 +38,7 @@ class AutoModelForSequenceClassificationWrapper(torch.nn.Module):
 class ClassificationModule(LightningModule):
     def __init__(
             self,
-            num_classes: NonNegativeInt,
+            num_classes: NonNegativeInt=0,
             model: torch.nn.Module = lazy_instance(AutoModelForSequenceClassificationWrapper, pretrained_model_name_or_path="bowphs/GreBerta"),
             optimizer: OptimizerCallable = lambda p: torch.optim.AdamW(p),
             scheduler_type: SchedulerType = SchedulerType.LINEAR,
@@ -49,9 +49,9 @@ class ClassificationModule(LightningModule):
         super().__init__()
 
         self.model = model
-        self.model.model.config.num_labels = num_classes
-
         self.push_to_hub = push_to_hub
+
+        self.num_classes = num_classes
 
         self.tokenizer = self.model.tokenizer
 
@@ -64,6 +64,13 @@ class ClassificationModule(LightningModule):
 
         self.epoch_outputs = {"train": [], "val": [], "test": []}
         self.epoch_labels = {"train": [], "val": [], "test": []}
+
+    def on_train_start(self) -> None:
+        logger.info(f"ClassificationModule -- Number of classes: {self.num_classes}")
+        try:
+            self.model.config.num_labels = self.trainer.datamodule._num_classes
+        except:
+            raise ValueError("Number of classes not set in the datamodule")
 
     def forward(self, x):
         return self.model(x)
