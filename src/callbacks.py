@@ -35,7 +35,7 @@ class PushToHuggingfaceCallback(Callback):
                 print(f"Repository already exists or there was an error: {e}")
 
             # Ensure the model attribute of the Lightning module is a PreTrainedModel
-            if not isinstance(pl_module.model.model, PreTrainedModel):
+            if not isinstance(pl_module.model, PreTrainedModel):
                 raise ValueError("The 'model' attribute of your LightningModule must be an instance of PreTrainedModel")
 
         else:
@@ -53,8 +53,8 @@ class PushToHuggingfaceCallback(Callback):
         #logger.info(f"PushToHuggingfaceCallback() -- Saving model to {path}")
 
         # saving the model and the corresponding tokenizer as huggingface models and tokenizer
-        pl_module.model.tokenizer.save_pretrained(path)
-        pl_module.model.model.save_pretrained(path)
+        pl_module.tokenizer.save_pretrained(path)
+        pl_module.model.save_pretrained(path)
 
         logger.info(f"PushToHuggingfaceCallback() -- Saved model and toeknizer to {path}")
 
