@@ -90,9 +90,8 @@ class ClassificationModule(LightningModule):
             scheduler_type: SchedulerType = SchedulerType.LINEAR,
             num_warmup_steps: NonNegativeInt = 0,
             push_to_hub: bool = False,
+            init_temp: float = 1.0,
             confidence_threshold: NonNegativeFloat = 0.8,
-            init_w: float = 1.0,
-            init_b: float = 0.0,
     ):
         super().__init__()
         self.task = task
@@ -116,7 +115,7 @@ class ClassificationModule(LightningModule):
         self.epoch_outputs = {"train": [], "val": [], "test": []}
         self.epoch_labels = {"train": [], "val": [], "test": []}
 
-        self.set_temperature(init_w, init_b)
+        self.set_temperature(val=init_temp)
 
         self.calibrated = False
         
@@ -129,7 +128,7 @@ class ClassificationModule(LightningModule):
             self.temp_b.requires_grad = True
             self.vector_calibration(calibration_dataloader)
             
-    def vector_calibration(self, calibration_dataloader):
+    def temperature_calibration(self, calibration_dataloader):
         """
         Calibrate the model by optimizing a vector which is applied to the model's logits.
         :param calibration_dataloader:
@@ -189,8 +188,8 @@ class ClassificationModule(LightningModule):
 
         self.calibrated = True
 
-        logger.debug(f"Calibrated temperature-weight: {self.temperature[0]}")
-        logger.debug(f"Calibrated temperature-bias: {self.temperature[1]}")
+        logger.debug(f"Calibrated temperature {self.temperature}")
+        #logger.debug(f"Calibrated temperature-bias: {self.temperature[1]}")
 
         ce.reset()
 
@@ -431,28 +430,29 @@ class ClassificationModule(LightningModule):
         # reset MulticlassF1Score
         mcls_f1.reset()
 
-    def set_temperature(self, val_w: float, val_b: float) -> None:
+    def set_temperature(self, val: float) -> None:
         """Set the temperature to a fixed value.
 
         Args:
-            val_w (float): Weight temperature value.
-            val_b (float): Bias temperature value.
+            val (float): Temperature value.
         """
+        if val <= 0:
+            raise ValueError("Temperature value must be positive.")
 
-        self.temp_w = torch.nn.Parameter(
-            torch.ones(self.num_labels, device=self.device) * val_w,
-            requires_grad=True,
+        self.temp = torch.nn.Parameter(
+            torch.ones(1, device=self.device) * val, requires_grad=True
         )
 
-        self.temp_b = torch.nn.Parameter(
-            torch.ones(self.num_labels, device=self.device) * val_b,
-            requires_grad=True,
-        )
+    def _scale(self, logits: torch.Tensor) -> torch.Tensor:
+        """Scale the prediction with the optimal temperature.
 
-        self.temperature = torch.nn.ParameterList([self.temp_w, self.temp_b])
+        Args:
+            logits (Tensor): logits to be scaled.
 
-    def _scale(self, logits):
-        return self.temp_w * logits + self.temp_b
+        Returns:
+            Tensor: Scaled logits.
+        """
+        return logits / self.temperature[0]
 
     def _process_batch(self, batch, stage="train") -> SequenceClassifierOutput:
         assert self.num_labels is not None, "Number of classes must be set before processing a batch"
