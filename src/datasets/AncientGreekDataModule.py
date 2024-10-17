@@ -245,7 +245,8 @@ class AncientGreekDataModule(LightningDataModule):
             self.dataset = self.dataset.assign(split="train")
             self.dataset.rename(columns={"chunks": "text"}, inplace=True)
 
-            self.dataset = self.dataset.reset_index(drop=True)
+            self.dataset = self.dataset.reset_index(drop=False)
+            self.dataset.rename(columns={"index": "unique_id"}, inplace=True)
 
             if self.task == "mlm":
                 self.dataset = self.dataset.sample(frac=1.0)
@@ -266,7 +267,7 @@ class AncientGreekDataModule(LightningDataModule):
                 predict_df = self.dataset[(self.dataset["author_id"] == 81) & (self.dataset["work_id"] == 16)]
                 predict_df = predict_df.assign(split="predict")
 
-                self.dataset = self.dataset[~((self.dataset["author_id"] == 81) & (self.dataset["work_id"] == 16))]
+                self.dataset = self.dataset[~self.dataset["unique_id"].isin(predict_df["unique_id"])]
 
                 # all minor authors go to UNK, which will only be in the test set
                 # therefore, we can create the base of this dataset
@@ -279,9 +280,9 @@ class AncientGreekDataModule(LightningDataModule):
                 train_df = self.dataset.groupby("author_id").sample(frac=.75)
                 train_df = train_df.assign(split="train")
 
-                val_df = self.dataset[~self.dataset.index.isin(train_df.index)]
+                val_df = self.dataset[~self.dataset["unique_id"].isin(train_df["unique_id"])]
                 test_df = val_df.groupby("author_id").sample(frac=.5)
-                val_df = val_df[~val_df.index.isin(test_df.index)]
+                val_df = val_df[~val_df["unique_id"].isin(test_df["unique_id"])]
                 val_df = val_df.assign(split="val")
                 test_df = test_df.assign(split="test")
 
