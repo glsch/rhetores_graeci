@@ -44,7 +44,7 @@ def resolve_forward_ref(ref: Union[str, ForwardRef, Type]):
 
 class AncientGreekDataModule(LightningDataModule):
     def __init__(self,
-                 model_class: Type[torch.nn.Module] = AutoModelForMaskedLM,
+                 model_class: Union[AutoModelForMaskedLM, AutoModelForSequenceClassification],
                  base_transformer: str = "bowphs/GreBerta",
                  epithets: List[str]=None,
                  chunk_type: TextChunkType = TextChunkType.CHUNK,

@@ -138,7 +138,8 @@ model:
     push_to_hub: false
     confidence_threshold: 0.8
 data:
-  model_class: transformers.AutoModelForSequenceClassification
+  model_class:
+    class_path: transformers.AutoModelForSequenceClassification
   base_transformer: bowphs/GreBerta
   epithets:
   - Rhet.
