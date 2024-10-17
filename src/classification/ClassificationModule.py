@@ -28,8 +28,8 @@ from src.logger_config import logger
 class ClassificationModule(LightningModule):
     def __init__(
             self,
-            task: str = "classification",
-            base_transformer: str = "bowphs/GreBerta",
+            task: str,
+            base_transformer: str,
             model_class: Type[AutoModelForSequenceClassification] = transformers.models.auto.AutoModelForSequenceClassification,
             tokenizer: Union[PreTrainedTokenizer, PreTrainedTokenizerFast] = None,
             num_labels: NonNegativeInt = None,
