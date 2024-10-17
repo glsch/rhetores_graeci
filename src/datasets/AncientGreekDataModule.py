@@ -305,7 +305,7 @@ class AncientGreekDataModule(LightningDataModule):
             self.collate_fn = DataCollatorForLanguageModeling(tokenizer=self.tokenizer, mlm=True, mlm_probability=0.15)
 
         elif isinstance(model, AutoModelForSequenceClassificationWrapper):
-            self.id2label = self.dataset[self.dataset["split"].isin(["train", "val"])][["label", "target"]].drop_duplicates().set_index("label")["target"].to_dict()
+            self.id2label = self.dataset[self.dataset["split"] != "predict"][["label", "target"]].drop_duplicates().set_index("label")["target"].to_dict()
             self.label2id = {l: i for i, l in self.id2label.items()}
             self._num_classes = len(self.id2label)
             self.trainer.model.num_classes = self._num_classes
