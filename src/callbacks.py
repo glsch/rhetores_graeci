@@ -48,6 +48,8 @@ class PushToHuggingfaceCallback(Callback):
         if path is None:
             path = trainer.default_root_dir
 
+        path = os.path.join(path, "huggingface")
+
         #logger.info(f"PushToHuggingfaceCallback() -- Saving model to {path}")
 
         # saving the model and the corresponding tokenizer as huggingface models and tokenizer
