@@ -13,7 +13,7 @@ from jsonargparse.typing import NonNegativeInt, NonNegativeFloat,ClosedUnitInter
 from src.datasets.PandasDataset import PandasDataset
 from src.path_manager import PathManager
 from src.datasets.utils import download_dataset
-from transformers import AutoTokenizer, AutoModel, RobertaModel, DataCollatorForLanguageModeling, DefaultDataCollator
+from transformers import AutoTokenizer, AutoModel, RobertaModel, DataCollatorForLanguageModeling, DefaultDataCollator, DataCollatorWithPadding
 
 import torch
 from transformers import PreTrainedTokenizer, PreTrainedTokenizerFast, AutoTokenizer
@@ -311,7 +311,7 @@ class AncientGreekDataModule(LightningDataModule):
             logger.info(
                 f"AncientGreekDataModule.setup() -- Model is subclass of {AutoModelForMaskedLMWrapper}: {self.trainer.model.model.__class__.__name__}")
             dataset_cls = ClassificationDataset
-            self.collate_fn = DefaultDataCollator()
+            self.collate_fn = DataCollatorWithPadding(return_tensors="pt", tokenizer=self.tokenizer, padding="max_length", max_length=512)
 
             m = (self.batch_size // self._num_classes) + 1
             self.sampler = [
