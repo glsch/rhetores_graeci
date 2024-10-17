@@ -137,7 +137,7 @@ model:
         capturable: false
         differentiable: false
         fused: null
-    scheduler_type: REDUCE_ON_PLATEAU
+    scheduler_type: LINEAR
     num_warmup_steps: 0
     confidence_threshold: 0.8
 data:
