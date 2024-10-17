@@ -53,9 +53,9 @@ class AncientGreekDataModule(LightningDataModule):
         self.model_class = model_class
 
         self.fname = "preprocessed_dataset"
-        if self.model_class == AutoModelForMaskedLM:
+        if self.model_class == Type[AutoModelForMaskedLM]:
             self.task = "mlm"
-        elif self.model_class == AutoModelForSequenceClassification:
+        elif self.model_class == Type[AutoModelForSequenceClassification]:
             self.task = "classification"
         else:
             raise ValueError(f"Invalid model class! Expected 'AutoModelForSequenceClassification' or 'AutoModelForMaskedLM', got {self.model_class}")
