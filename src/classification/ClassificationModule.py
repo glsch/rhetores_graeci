@@ -263,7 +263,7 @@ class ClassificationModule(LightningModule):
         self.log(f"{stage}/precision", precision, logger=True, on_epoch=True)
         self.log(f"{stage}/recall", recall, logger=True, on_epoch=True)
 
-        self.epoch_logits[stage] = []
+        self.epoch_outputs[stage] = []
         self.epoch_labels[stage] = []
         # reset MulticlassF1Score
         mcls_f1.reset()
