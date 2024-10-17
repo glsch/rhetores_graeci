@@ -523,8 +523,8 @@ class ClassificationModule(LightningModule):
 
     def _process_batch(self, batch, stage="train") -> SequenceClassifierOutput:
         assert self.num_labels is not None, "Number of classes must be set before processing a batch"
-        logger.debug(f"ClassificationModule._process_batch() -- Processing batch for stage: {stage}")
-        logger.debug(f"ClassificationModule._process_batch() -- Batch: {batch}")
+        logger.info(f"ClassificationModule._process_batch() -- Processing batch for stage: {stage}")
+        logger.info(f"ClassificationModule._process_batch() -- Batch: {batch}")
         logger.debug(f"ClassificationModule._process_batch() -- Batch input_ids: {batch['input_ids'].shape}")
         logger.debug(f"ClassificationModule._process_batch() -- Batch labels: {batch['labels'].shape}")
         logger.debug(f"ClassificationModule._process_batch() -- Batch labels: {batch['labels']}")
