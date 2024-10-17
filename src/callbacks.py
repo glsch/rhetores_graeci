@@ -44,7 +44,7 @@ class PushToHuggingfaceCallback(Callback):
 
         epoch = trainer.current_epoch
 
-        path = trainer.logger.save_dir
+        path = trainer.logger.experiment.dir
         if path is None:
             path = trainer.default_root_dir
 
