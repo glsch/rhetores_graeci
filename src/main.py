@@ -5,7 +5,7 @@ from jsonargparse import lazy_instance
 from lightning import Trainer, LightningModule
 from lightning.pytorch.cli import LightningCLI, LightningArgumentParser
 from lightning.pytorch.loggers import WandbLogger
-from lightning.pytorch.callbacks import ModelCheckpoint
+from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
 from lightning.pytorch.cli import SaveConfigCallback
 import torch
 import numpy as np
@@ -57,6 +57,7 @@ class RhetoresGraecigCli(LightningCLI):
             {"class_path": "lightning.pytorch.callbacks.LearningRateMonitor",
              "init_args": {"logging_interval": "step"}},
             {"class_path": "src.callbacks.PushToHuggingfaceCallback", "init_args": {"repo_owner": "glsch"}},
+            {"class_path": "lightning.pytorch.callbacks.EarlyStopping", "init_args": {"min_delta": 0.01, "patience": 3, "monitor": "val/loss", "mode": "min", "check_on_train_epoch_end": False}},
             # lazy_instance(SaveConfigCallback)
         ]
 
