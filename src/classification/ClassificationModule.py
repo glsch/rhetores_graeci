@@ -285,7 +285,12 @@ class ClassificationModule(LightningModule):
         df = pd.DataFrame(probs_np)
         df['siglum'] = sigla_np
 
-        print(df)
+        print(df.columns)
+
+        df_melted = df.melt(id_vars=['siglum'], var_name='class', value_name='probability')
+
+        print(df_melted.columns)
+        print(df_melted)
 
         # unique_sigla, counts = torch.unique(sorted_sigla, return_counts=True)
 
