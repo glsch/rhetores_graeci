@@ -151,8 +151,8 @@ class ClassificationModule(LightningModule):
         all_logits = torch.cat(logits_list).detach().to(self.device)
         all_labels = torch.cat(labels_list).detach().to(self.device)
 
-        logger.debug(f"Temperature-weight: {self.temperature[0]}")
-        logger.debug(f"Temperature-bias: {self.temperature[1]}")
+        logger.debug(f"Temperature: {self.temperature[0]}")
+        #logger.debug(f"Temperature-bias: {self.temperature[1]}")
 
         MulticlassCalibrationError.plot = _ce_plot
         ce = MulticlassCalibrationError(num_classes=self.num_labels, n_bins=15, ignore_index=-100)
