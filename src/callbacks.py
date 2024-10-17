@@ -56,12 +56,11 @@ class PushToHuggingfaceCallback(Callback):
         pl_module.model.tokenizer.save_pretrained(path)
         pl_module.model.model.save_pretrained(path)
 
-
         logger.info(f"PushToHuggingfaceCallback() -- Saved model and toeknizer to {path}")
 
         if pl_module.push_to_hub:
             self.api.upload_folder(
-                commit_message=f"Pushing after epoch {epoch}",
+                commit_message=f"Epoch {epoch}",
                 folder_path=path,
                 repo_id=self.repo_id,
                 repo_type="model",
