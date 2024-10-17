@@ -1,5 +1,5 @@
 import os
-from pytorch_lightning.callbacks import Callback
+from lightning.pytorch import Callback
 from transformers import PreTrainedModel, AutoConfig
 from huggingface_hub import HfApi, create_repo
 

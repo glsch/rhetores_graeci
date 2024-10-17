@@ -54,7 +54,6 @@ class RhetoresGraecigCli(LightningCLI):
 
         callbacks = [
             {"class_path": "lightning.pytorch.callbacks.ModelCheckpoint"},
-
             {"class_path": "lightning.pytorch.callbacks.LearningRateMonitor",
              "init_args": {"logging_interval": "step"}},
             {"class_path": "src.callbacks.PushToHuggingfaceCallback", "init_args": {"repo_owner": "glsch"}},
@@ -98,7 +97,7 @@ class RhetoresGraecigCli(LightningCLI):
         })
 
         parser.link_arguments("model.tokenizer", "data.tokenizer", apply_on="instantiate")
-        parser.link_arguments("model.tokenizer", "data.tokenizer", apply_on="instantiate")
+        # parser.link_arguments("model.tokenizer", "data.tokenizer", apply_on="instantiate")
         # parser.link_arguments("model.num_heads", "trainer.num_sanity_val_steps", apply_on="instantiate")
         #
         # parser.link_arguments("data.alphabet_len", "model.rnn.init_args.input_size", apply_on="instantiate")

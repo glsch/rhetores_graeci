@@ -64,6 +64,12 @@ trainer:
       logging_interval: step
       log_momentum: false
       log_weight_decay: false
+  - class_path: src.callbacks.PushToHuggingfaceCallback
+    init_args:
+      repo_owner: glsch
+      token: null
+      private: false
+      suffix: _rhetores
   fast_dev_run: false
   max_epochs: 30
   min_epochs: null
@@ -78,7 +84,7 @@ trainer:
   val_check_interval: null
   check_val_every_n_epoch: 1
   num_sanity_val_steps: null
-  log_every_n_steps: 10
+  log_every_n_steps: 1
   enable_checkpointing: true
   enable_progress_bar: null
   enable_model_summary: null
@@ -99,7 +105,7 @@ trainer:
 model:
   class_path: src.MlmTuningModule.MlmTuningModule
   init_args:
-    scheduler_type: LINEAR
+    scheduler_type: COSINE
     model:
       class_path: src.MlmTuningModule.AutoModelForMaskedLMWrapper
       init_args:
@@ -107,7 +113,7 @@ model:
     optimizer:
       class_path: torch.optim.AdamW
       init_args:
-        lr: 5e-5
+        lr: 5.0e-05
         betas:
         - 0.9
         - 0.999
