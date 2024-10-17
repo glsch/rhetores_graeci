@@ -79,21 +79,22 @@ class AncientGreekDataModule(LightningDataModule):
 
         assert isinstance(self.epithets, list), "Epithets must be a list"
 
-        #
-        # self.task = "mlm"
-        #
-        # if isinstance(self.trainer.model.model, AutoModelForMaskedLMWrapper):
-        #
-        #     self.task = "mlm"
-        # elif isinstance(self.trainer.model.model, AutoModelForSequenceClassificationWrapper):
-        #
-        #     self.task = "classification"
-
         self.dataset = None
+        self._num_classes = None
 
-        self.save_hyperparameters()
+        self.prepared = False
+
+    @property
+    def num_classes(self):
+        if self._num_classes is None:
+            self.setup(stage="fit")
+
+        return self._num_classes
 
     def prepare_data(self) -> None:
+        if self.prepared:
+            return
+
         def expand_levels(levels):
             row_dict = {}
             for i, (value, name) in enumerate(levels):
@@ -243,38 +244,62 @@ class AncientGreekDataModule(LightningDataModule):
                 test_df = test_df.assign(split="test")
 
                 logger.info("AncientGreekDataModule.prepare_data() -- Creating dataset")
-                self.dataset = pd.concat([train_df, val_df, test_df, unk_df, predict_df])
+                self.dataset = pd.concat([train_df, val_df, test_df])
+                encoded_labels, unique = pd.factorize(self.dataset["author_id"])
+                max_label = max(encoded_labels)
+                unk = max_label + 1
+                self.dataset = self.dataset.assign(label=encoded_labels)
+                unk_df = unk_df.assign(target="<UNK>")
+                unk_df = unk_df.assign(label=unk)
+                predict_df = predict_df.assign(label=unk + 1)
+                self.dataset = pd.concat([self.dataset, unk_df, predict_df])
                 logger.info(f"AncientGreekDataModule.prepare_data() -- Number of authors full dataset: {self.dataset['author_id'].unique().tolist()}")
                 logger.info(f"AncientGreekDataModule.prepare_data() -- Number of authors train df: {train_df['author_id'].unique().tolist()}")
                 logger.info(f"AncientGreekDataModule.prepare_data() -- Number of authors unk_df: {unk_df['author_id'].unique().tolist()}")
                 logger.info(f"AncientGreekDataModule.prepare_data() -- Number of authors val_df: {val_df['author_id'].unique().tolist()}")
 
-                logger.info(f"AncientGreekDataModule.prepare_data() -- Max samples: {self.dataset.groupby('author_id').size().max()}")
-                logger.info(f"AncientGreekDataModule.prepare_data() -- Min samples: {self.dataset.groupby('author_id').size().min()}")
+                logger.info(f"AncientGreekDataModule.prepare_data() -- Max samples: {self.dataset[self.dataset['split'].isin(['train', 'val'])].groupby('author_id').size().max()}")
+                logger.info(f"AncientGreekDataModule.prepare_data() -- Min samples: {self.dataset[self.dataset['split'].isin(['train', 'val'])].groupby('author_id').size().min()}")
+                logger.info(f"AncientGreekDataModule.prepare_data() -- Counts: {self.dataset[self.dataset['split'].isin(['train', 'val'])].groupby('author_id').size().sort_values()}")
+
 
                 logger.info(f"AncientGreekDataModule.prepare_data() -- Dataset columns: {self.dataset.columns}")
 
                 # todo: add label encoding somewhere here
             self.dataset.to_csv(os.path.join(PathManager.data_path, "preprocessed", f"{self.fname}.csv"), index=False)
+            self.prepared = True
         else:
             self.dataset = pd.read_csv(os.path.join(PathManager.data_path, "preprocessed", f"{self.fname}.csv"))
 
+        self.id2label = self.dataset[self.dataset["split"].isin(["train", "val"])][["label", "target"]].drop_duplicates().set_index("label")["target"].to_dict()
 
-    def setup(self, stage: str) -> None:
+    def setup(self, stage: str, model: torch.nn.Module = None) -> None:
         dataset_cls = None
         self.collate_fn = None
+
+        if model is not None and isinstance(model, AutoModelForSequenceClassificationWrapper):
+            self.task = "classification"
+            if not os.path.exists(os.path.join(PathManager.data_path, "preprocessed", f"{self.fname}.csv")):
+                self.prepare_data()
+
+        if model is None:
+            model = self.trainer.model.model
+
         self.dataset = pd.read_csv(os.path.join(PathManager.data_path, "preprocessed", f"{self.fname}.csv"))
 
         self.train_df = self.dataset[self.dataset["split"] == "train"]
         self.val_df = self.dataset[self.dataset["split"] == "val"]
         self.test_df = self.dataset[self.dataset["split"] == "test"]
 
-        if isinstance(self.trainer.model.model, AutoModelForMaskedLMWrapper):
+        if isinstance(model, AutoModelForMaskedLMWrapper):
             logger.info(f"AncientGreekDataModule.setup() -- Model is subclass of {AutoModelForMaskedLMWrapper}: {self.trainer.model.model.__class__.__name__}")
             dataset_cls = MLMDataset
             self.collate_fn = DataCollatorForLanguageModeling(tokenizer=self.tokenizer, mlm=True, mlm_probability=0.15)
 
-        elif isinstance(self.trainer.model.model, AutoModelForSequenceClassificationWrapper):
+        elif isinstance(model, AutoModelForSequenceClassificationWrapper):
+            self.id2label = self.dataset[self.dataset["split"].isin(["train", "val"])][["label", "target"]].drop_duplicates().set_index("label")["target"].to_dict()
+            self.label2id = {l: i for i, l in self.id2label.items()}
+            self._num_classes = len(self.id2label)
             logger.info(
                 f"AncientGreekDataModule.setup() -- Model is subclass of {AutoModelForMaskedLMWrapper}: {self.trainer.model.model.__class__.__name__}")
             dataset_cls = ClassificationDataset
@@ -327,6 +352,6 @@ class AncientGreekDataModule(LightningDataModule):
 if __name__ == "__main__":
     tokenizer = AutoTokenizer.from_pretrained("bowphs/GreBerta")
     model = AutoModelForSequenceClassificationWrapper(pretrained_model_name_or_path="bowphs/GreBerta")
-    dm = AncientGreekDataModule(epithets=["Rhet.", "Orat."], tokenizer=tokenizer, model=model, chunk_type=TextChunkType.CHUNK, overlap=0.0, chunk_length=512)
+    dm = AncientGreekDataModule(epithets=["Rhet.", "Orat."], tokenizer=tokenizer, model=model, chunk_type=TextChunkType.CHUNK, overlap=0.5, chunk_length=128)
 
     dm.prepare_data()

@@ -53,7 +53,6 @@ class MlmTuningModule(LightningModule):
             model: torch.nn.Module = lazy_instance(AutoModelForMaskedLMWrapper,
                                                    pretrained_model_name_or_path="bowphs/GreBerta"),
             optimizer: OptimizerCallable = lambda p: torch.optim.AdamW(p),
-            # weight_decay: NonNegativeFloat = 0.0,
             num_warmup_steps: NonNegativeInt = 0,
             push_to_hub: bool = False
     ):
@@ -65,7 +64,6 @@ class MlmTuningModule(LightningModule):
         else:
             raise ValueError("Model must be an instance of AutoModelForMaskedLMWrapper")
 
-        # self.weight_decay = weight_decay
         self.optimizer_callable = optimizer
         self.lr_scheduler_type = scheduler_type
         self.num_warmup_steps = num_warmup_steps

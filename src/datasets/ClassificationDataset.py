@@ -33,20 +33,19 @@ class ClassificationDataset(Dataset):
         self.id2label = {i: l for i, l in enumerate(unique)}
         self.label2id = {l: i for i, l in self.id2label.items()}
 
-        self.sequences = self.df["text"].tolist()
-        self.labels = self.df["label"].tolist()
+        self.records = self.df.to_dict(orient="records")
 
     def __len__(self):
-        return len(self.sequences)
+        return len(self.records)
 
     def __getitem__(self, idx: int):
         tokenized = self.tokenizer(
-            self.sequences[idx],
+            self.records[idx]["text"],
             max_length=512,
             truncation=True,
             padding="max_length",
         )
-        tokenized["label"] = self.labels[idx]
+        tokenized["label"] = self.records[idx]["target"]
 
         return tokenized
 

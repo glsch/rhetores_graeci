@@ -147,6 +147,7 @@ model:
         fused: null
     scheduler_type: REDUCE_ON_PLATEAU
     num_warmup_steps: 0
+    confidence_threshold: 0.8
 data:
   epithets:
   - Rhet.
