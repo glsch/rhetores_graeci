@@ -69,6 +69,7 @@ class ClassificationModule(LightningModule):
 
     def on_train_start(self) -> None:
         logger.info(f"ClassificationModule.on_train_start() -- Number of classes: {self.num_classes}")
+        self.model.model.num_labels = self.num_classes
         self.model.model.config.num_labels = self.num_classes
         self.model.model.config.id2label = self.self.trainer.datamodule.id2label
 
