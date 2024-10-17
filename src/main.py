@@ -77,6 +77,7 @@ class RhetoresGraecigCli(LightningCLI):
             "trainer.check_val_every_n_epoch": 1,
             "trainer.enable_checkpointing": True,
             "trainer.callbacks": callbacks,
+            "data.model_class": "transformers.AutoModelForSequenceClassification",
             "data.epithets": default_epithets,
             # # this does not work correctly as config would contain a 'proj_size' key which is only supported by LSTM, but is
             # # also present in the config for any subclass of RNNBase
@@ -98,8 +99,12 @@ class RhetoresGraecigCli(LightningCLI):
 
         })
 
-        parser.link_arguments("model.tokenizer", "data.tokenizer", apply_on="instantiate")
-        parser.link_arguments("model.model", "data.model", apply_on="instantiate")
+        parser.link_arguments("data.base_transformer", "model.base_transformer", apply_on="instantiate")
+        parser.link_arguments("data.model_class", "model.model_class", apply_on="instantiate")
+        parser.link_arguments("data.task", "model.task", apply_on="instantiate")
+        parser.link_arguments("data.tokenizer", "model.tokenizer", apply_on="instantiate")
+        parser.link_arguments("data.batch_size", "model.batch_size", apply_on="instantiate")
+        parser.link_arguments("data.id2label", "model.id2label", apply_on="instantiate")
         # parser.link_arguments("data.num_classes", "model.num_classes", apply_on="instantiate")
         # parser.link_arguments("model.tokenizer", "data.tokenizer", apply_on="instantiate")
         # parser.link_arguments("model.num_heads", "trainer.num_sanity_val_steps", apply_on="instantiate")
