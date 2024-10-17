@@ -311,7 +311,7 @@ class AncientGreekDataModule(LightningDataModule):
             logger.info(
                 f"AncientGreekDataModule.setup() -- Model is subclass of {AutoModelForMaskedLMWrapper}: {self.trainer.model.model.__class__.__name__}")
             dataset_cls = ClassificationDataset
-            self.collate_fn = DefaultDataCollator(return_tensors="pt")
+            self.collate_fn = DefaultDataCollator()
 
             m = (self.batch_size // self._num_classes) + 1
             self.sampler = [

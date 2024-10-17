@@ -20,17 +20,16 @@ from src.logger_config import logger
 # todo: stats for logical divisions of the AR
 
 class AutoModelForSequenceClassificationWrapper(torch.nn.Module):
-    def __init__(self, pretrained_model_name_or_path: str = "bowphs/GreBerta", instantiate: bool = True):
+    def __init__(self, pretrained_model_name_or_path: str = "bowphs/GreBerta"):
         super().__init__()
         self.pretrained_model_name_or_path = pretrained_model_name_or_path
 
         if isinstance(pretrained_model_name_or_path, str):
-            if instantiate:
-                self.model = AutoModelForSequenceClassification.from_pretrained(pretrained_model_name_or_path=self.pretrained_model_name_or_path)
-                if self.pretrained_model_name_or_path != "altsoph/bert-base-ancientgreek-uncased":
-                    self.tokenizer = AutoTokenizer.from_pretrained(self.pretrained_model_name_or_path)
-                else:
-                    self.tokenizer = AutoTokenizer.from_pretrained("nlpaueb/bert-base-greek-uncased-v1")
+            self.model = AutoModelForSequenceClassification.from_pretrained(pretrained_model_name_or_path=self.pretrained_model_name_or_path)
+            if self.pretrained_model_name_or_path != "altsoph/bert-base-ancientgreek-uncased":
+                self.tokenizer = AutoTokenizer.from_pretrained(self.pretrained_model_name_or_path)
+            else:
+                self.tokenizer = AutoTokenizer.from_pretrained("nlpaueb/bert-base-greek-uncased-v1")
 
     def forward(self, x):
         #if "labels" in x:
@@ -137,12 +136,14 @@ class ClassificationModule(LightningModule):
     def _process_batch(self, batch, stage="train") -> SequenceClassifierOutput:
         assert self.num_classes is not None, "Number of classes must be set before processing a batch"
         logger.info(f"ClassificationModule._process_batch() -- Processing batch for stage: {stage}")
+        logger.info(f"ClassificationModule._process_batch() -- Batch: {batch}")
         logger.info(f"ClassificationModule._process_batch() -- Batch input_ids: {batch['input_ids'].shape}")
         logger.info(f"ClassificationModule._process_batch() -- Batch labels: {batch['labels'].shape}")
         logger.info(f"ClassificationModule._process_batch() -- Batch labels: {batch['labels']}")
         logger.info(f"ClassificationModule._process_batch() -- Num classes: {self.num_classes}")
         logger.info(f"ClassificationModule._process_batch() -- Num classes in the model: {self.model.model.config.num_labels}")
-        classifier_output = self(batch)
+
+        classifier_output = self.forward(batch)
         self.log(f"{stage}/loss", classifier_output.loss, on_step=False, on_epoch=True, prog_bar=True, logger=True)
 
         # saving for epoch
