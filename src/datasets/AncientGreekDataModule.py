@@ -207,11 +207,13 @@ class AncientGreekDataModule(LightningDataModule):
             logger.info(f"AncientGreekDataModule.setup() -- Model is subclass of {AutoModelForMaskedLMWrapper}: {self.trainer.model.model.__class__.__name__}")
             dataset_cls = MLMDataset
             self.collate_fn = DataCollatorForLanguageModeling(tokenizer=self.tokenizer, mlm=True, mlm_probability=0.15)
+
         elif isinstance(self.trainer.model.model, AutoModelForSequenceClassificationWrapper):
             logger.info(
                 f"AncientGreekDataModule.setup() -- Model is subclass of {AutoModelForMaskedLMWrapper}: {self.trainer.model.model.__class__.__name__}")
             dataset_cls = ClassificationDataset
             self.collate_fn = DefaultDataCollator(return_tensors="pt")
+
         else:
             logger.info(
                 f"AncientGreekDataModule.setup() -- Model is {self.trainer.model.model} {self.trainer.model.model.__class__} {self.trainer.model.model.__class__.__name__} {self.trainer.model.model.__dir__}")

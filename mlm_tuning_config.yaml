@@ -120,6 +120,7 @@ model:
         differentiable: false
         fused: null
     num_warmup_steps: 0
+    push_to_hub: false
 data:
   epithets:
   - Rhet.

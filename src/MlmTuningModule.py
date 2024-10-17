@@ -55,6 +55,7 @@ class MlmTuningModule(LightningModule):
             optimizer: OptimizerCallable = lambda p: torch.optim.AdamW(p),
             # weight_decay: NonNegativeFloat = 0.0,
             num_warmup_steps: NonNegativeInt = 0,
+            push_to_hub: bool = False
     ):
         super().__init__()
 
@@ -69,7 +70,25 @@ class MlmTuningModule(LightningModule):
         self.lr_scheduler_type = scheduler_type
         self.num_warmup_steps = num_warmup_steps
 
+        self.push_to_hub = push_to_hub
+
+        self._dir_save_path = None
+
         self.save_hyperparameters()
+
+    @property
+    def dir_save_path(self):
+        if self._dir_save_path is None:
+            self._dir_save_path = self._get_save_dir()
+
+        return self._dir_save_path
+
+    def _get_save_dir(self):
+        save_dir = self.trainer.logger.save_dir
+        if save_dir is None:
+            save_dir = self.trainer.default_root_dir
+
+        return save_dir
 
     def forward(self, batch):
         return self.model(batch)
@@ -81,6 +100,27 @@ class MlmTuningModule(LightningModule):
 
     def training_step(self, batch, batch_idx):
         return self._process_batch(batch, "train")
+
+    # def on_train_epoch_end(self) -> None:
+    #     assert isinstance(self.model, AutoModelForMaskedLMWrapper)
+    #     # huggingface model saving
+    #     path = os.path.join(self.dir_save_path, "huggingface")
+    #     self.model.tokenizer.save_pretrained(path)
+    #     self.model.model.save_pretrained(path, from_pt=True, safe_serialization=False)
+    #
+    #     # pushing to hub, if necessary
+    #     if self.push_to_hub:
+    #         api.upload_folder(
+    #             commit_message=f"Pushing after epoch {self.trainer.current_epoch}",
+    #             folder_path=path,
+    #             repo_id=repo_id,
+    #             repo_type="model",
+    #             token=hub_token,
+    #             ignore_patterns=[".gitattributes", ".gitignore", "**/checkpoints/**", "logs/**", "**/wandb/**"],
+    #             delete_patterns=[".gitattributes", ".gitignore", "**/checkpoints/**", "logs/**", "**/wandb/**"]
+    #         )
+    #
+    #         model.model.push_to_hub(repo_id=repo_id, token=hub_token)
 
     def validation_step(self, batch, batch_idx):
         return self._process_batch(batch, "val")

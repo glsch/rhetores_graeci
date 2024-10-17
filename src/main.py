@@ -18,6 +18,7 @@ from lightning.pytorch.cli import OptimizerCallable, LRSchedulerCallable, Callab
 from src.datasets.AncientGreekDataModule import AncientGreekDataModule as AncientGreek
 from src.classification.ClassificationModule import ClassificationModule # noqa: F401
 from src.MlmTuningModule import MlmTuningModule # noqa: F401
+from src.callbacks import PushToHuggingfaceCallback
 from lightning.fabric.utilities.cloud_io import _is_dir, _is_local_file_protocol, get_filesystem
 from lightning.fabric.utilities.types import _PATH
 from src.path_manager import PathManager
@@ -53,8 +54,10 @@ class RhetoresGraecigCli(LightningCLI):
 
         callbacks = [
             {"class_path": "lightning.pytorch.callbacks.ModelCheckpoint"},
+
             {"class_path": "lightning.pytorch.callbacks.LearningRateMonitor",
              "init_args": {"logging_interval": "step"}},
+            {"class_path": "src.callbacks.PushToHuggingfaceCallback", "init_args": {"repo_owner": "glsch"}},
             # lazy_instance(SaveConfigCallback)
         ]
 
@@ -94,6 +97,7 @@ class RhetoresGraecigCli(LightningCLI):
 
         })
 
+        parser.link_arguments("model.tokenizer", "data.tokenizer", apply_on="instantiate")
         parser.link_arguments("model.tokenizer", "data.tokenizer", apply_on="instantiate")
         # parser.link_arguments("model.num_heads", "trainer.num_sanity_val_steps", apply_on="instantiate")
         #
