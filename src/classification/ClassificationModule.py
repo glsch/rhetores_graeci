@@ -1,6 +1,6 @@
 import enum
 import os
-from typing import Union, List, Dict, Type
+from typing import Union, List, Dict, Type, Any
 
 from jsonargparse.typing import NonNegativeInt, NonNegativeFloat,ClosedUnitInterval, restricted_number_type, PositiveInt
 from jsonargparse import lazy_instance
@@ -21,6 +21,7 @@ from torchmetrics.classification import MulticlassF1Score, MulticlassCalibration
 from torch.nn import CrossEntropyLoss
 
 import numpy as np
+import pandas as pd
 
 from src.logger_config import logger
 
@@ -112,8 +113,11 @@ class ClassificationModule(LightningModule):
 
         self.save_hyperparameters(ignore=["base_transformer", "model_class"])
 
-        self.epoch_outputs = {"train": [], "val": [], "test": []}
-        self.epoch_labels = {"train": [], "val": [], "test": []}
+        self.epoch_outputs = {"train": [], "val": [], "test": [], "predict": []}
+        self.epoch_labels = {"train": [], "val": [], "test": [], "predict": []}
+
+        # an ugly workaround to keep predictions here, too
+        self.sigla = []
 
         self.set_temperature(val=init_temp)
 
@@ -251,6 +255,66 @@ class ClassificationModule(LightningModule):
         logger.debug(f"ClassificationModule.on_test_epoch_end()")
         with torch.no_grad():
             self.compute_metrics(stage="test")
+
+    def predict_step(self, batch) -> Any:
+        outputs = self._process_batch(batch, stage="predict")
+        return outputs.loss
+
+    def on_predict_epoch_end(self) -> None:
+        logger.debug(f"ClassificationModule.on_predict_epoch_end()")
+        with torch.no_grad():
+            self.get_per_chapter_stats(stage="predict")
+
+    def get_per_chapter_stats(self, stage="predict"):
+        save_dir = self.trainer.logger.save_dir if self.trainer.logger.save_dir is not None else self.trainer.default_root_dir
+        logger.debug(f"ClassificationModule.compute_metrics() -- Saving the plot to {save_dir}")
+
+        all_logits = torch.cat(self.epoch_outputs[stage], dim=0)
+        all_sigla = torch.cat(self.sigla, dim=0)
+
+        # Sort sigla and logits
+        sorted_sigla, indices = torch.sort(all_sigla, dim=0)
+        sorted_logits = all_logits[indices]
+
+        # Get unique sigla values and their counts
+        unique_sigla, counts = torch.unique(sorted_sigla, return_counts=True)
+
+        # Calculate cumulative sum of counts to use as indices
+        cumsum_counts = torch.cat([torch.tensor([0]), torch.cumsum(counts, dim=0)[:-1]])
+
+        # Initialize list to store results
+        results = []
+
+        # Iterate over unique sigla values
+        for i, sigla in enumerate(unique_sigla):
+            # Get logits for this sigla
+            start_idx = cumsum_counts[i]
+            end_idx = start_idx + counts[i]
+            sigla_logits = sorted_logits[start_idx:end_idx]
+
+            # Get top-5 predictions
+            top5_logits, top5_indices = torch.topk(sigla_logits, k=5, dim=1)
+
+            # Calculate average of top-5 predictions
+            avg_top5 = top5_logits.mean(dim=0)
+
+            # Store results
+            results.append({
+                'sigla': sigla.item(),
+                'avg_top1': avg_top5[0].item(),
+                'avg_top2': avg_top5[1].item(),
+                'avg_top3': avg_top5[2].item(),
+                'avg_top4': avg_top5[3].item(),
+                'avg_top5': avg_top5[4].item(),
+            })
+
+        # Convert results to DataFrame
+        df = pd.DataFrame(results)
+
+        print(df)
+
+        return df
+
 
     def configure_optimizers(self):
         no_decay = ["bias",
@@ -465,6 +529,10 @@ class ClassificationModule(LightningModule):
         logger.debug(f"ClassificationModule._process_batch() -- Batch labels: {batch['labels'].shape}")
         logger.debug(f"ClassificationModule._process_batch() -- Batch labels: {batch['labels']}")
         logger.debug(f"ClassificationModule._process_batch() -- Num classes: {self.num_labels}")
+
+
+        if stage == "predict":
+            self.sigla.append(batch["siglum"])
 
         classifier_output = self.forward(batch)
         self.log(f"{stage}/loss", classifier_output.loss, on_step=False, on_epoch=True, prog_bar=True, logger=True)

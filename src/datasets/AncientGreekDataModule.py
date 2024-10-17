@@ -266,6 +266,7 @@ class AncientGreekDataModule(LightningDataModule):
                 # Dionysius Ars Rhetorica goes to predict corpus
                 predict_df = self.dataset[(self.dataset["author_id"] == 81) & (self.dataset["work_id"] == 16)]
                 predict_df = predict_df.assign(split="predict")
+                predict_df = predict_df.assign(siglum=lambda x: x["siglum"].str.split("_").str[-1].astype(int))
 
                 self.dataset = self.dataset[~self.dataset["unique_id"].isin(predict_df["unique_id"])]
 
@@ -331,6 +332,7 @@ class AncientGreekDataModule(LightningDataModule):
         self.train_df = self.dataset[self.dataset["split"] == "train"]
         self.val_df = self.dataset[self.dataset["split"] == "val"]
         self.test_df = self.dataset[self.dataset["split"] == "test"]
+        self.predict_df = self.dataset[self.dataset["split"] == "predict"]
 
         if self.task == "mlm":
             logger.info(f"AncientGreekDataModule.setup() -- Model is subclass of {AutoModelForMaskedLMWrapper}: {self.trainer.model.model.__class__.__name__}")
@@ -368,6 +370,10 @@ class AncientGreekDataModule(LightningDataModule):
         elif stage == "test":
             self.val_dataset = dataset_cls(df=self.val_df, split="val", tokenizer=self.tokenizer)
             self.test_dataset = dataset_cls(df=self.test_df, split="test", tokenizer=self.tokenizer)
+
+        elif stage == "predict":
+            self.val_dataset = dataset_cls(df=self.val_df, split="val", tokenizer=self.tokenizer)
+            self.predict_dataset = dataset_cls(df=self.predict_df, split="predict", tokenizer=self.tokenizer)
 
 
     def get_sampler(self, stage="train"):
@@ -412,6 +418,19 @@ class AncientGreekDataModule(LightningDataModule):
         loader = DataLoader(
             self.test_dataset,
             batch_size=self.batch_size,
+            collate_fn=self.collate_fn,
+            sampler=sampler,
+            shuffle=False,
+            num_workers=self.num_workers,
+            persistent_workers=self.persistent_workers
+        )
+        return loader
+
+    def predict_dataloader(self):
+        sampler = None
+        loader = DataLoader(
+            self.test_dataset,
+            batch_size=1,
             collate_fn=self.collate_fn,
             sampler=sampler,
             shuffle=False,

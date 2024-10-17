@@ -21,7 +21,7 @@ class ClassificationDataset(Dataset):
             self,
             tokenizer: Union[PreTrainedTokenizer, PreTrainedTokenizerFast],
             df: pd.DataFrame,
-            split: Literal["train", "val", "test"] = "train",
+            split: Literal["train", "val", "test", "predict"] = "train",
             **kwargs: Any
     ):
         self.df = df
@@ -48,6 +48,10 @@ class ClassificationDataset(Dataset):
             return_token_type_ids=True,
             # return_special_tokens_mask=True
         )
+
+        if self.split == "predict":
+            tokenized["siglum"] = self.records[idx]["siglum"]
+
         tokenized["label"] = self.records[idx]["label"]
 
         return tokenized
