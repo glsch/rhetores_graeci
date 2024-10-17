@@ -26,6 +26,7 @@ from src.classification.ClassificationModule import AutoModelForSequenceClassifi
 from src.datasets.MlmDataset import MLMDataset
 from src.datasets.ClassificationDataset import ClassificationDataset
 from src.logger_config import logger
+from pytorch_metric_learning.samplers import MPerClassSampler
 
 class TextChunkType(enum.Enum):
     SENTENCE = "sentence"
@@ -296,6 +297,8 @@ class AncientGreekDataModule(LightningDataModule):
         self.val_df = self.dataset[self.dataset["split"] == "val"]
         self.test_df = self.dataset[self.dataset["split"] == "test"]
 
+        self.sampler = None
+
         if isinstance(model, AutoModelForMaskedLMWrapper):
             logger.info(f"AncientGreekDataModule.setup() -- Model is subclass of {AutoModelForMaskedLMWrapper}: {self.trainer.model.model.__class__.__name__}")
             dataset_cls = MLMDataset
@@ -310,6 +313,17 @@ class AncientGreekDataModule(LightningDataModule):
                 f"AncientGreekDataModule.setup() -- Model is subclass of {AutoModelForMaskedLMWrapper}: {self.trainer.model.model.__class__.__name__}")
             dataset_cls = ClassificationDataset
             self.collate_fn = DefaultDataCollator(return_tensors="pt")
+
+            m = (self.batch_size // self._num_classes) + 1
+            self.sampler = [
+                MPerClassSampler(self.train_df["label"], m=m,
+                                            length_before_new_iter=len(self.train_df) * 100),
+                MPerClassSampler(self.val_df["label"], m=m,
+                                            length_before_new_iter=len(self.val_df) * 100),
+                MPerClassSampler(self.test_df["label"], m=m,
+                                 length_before_new_iter=len(self.test_df) * 100),
+            ]
+
 
         else:
             logger.info(
@@ -326,34 +340,58 @@ class AncientGreekDataModule(LightningDataModule):
 
 
     def train_dataloader(self):
-        return DataLoader(
+        sampler = None
+        if self.sampler is not None:
+            if isinstance(self.sampler, list):
+                sampler = self.sampler[0]
+
+        loader = DataLoader(
             self.train_dataset,
             batch_size=self.batch_size,
             collate_fn=self.collate_fn,
+            sampler=sampler,
             shuffle=True,
             num_workers=self.num_workers,
             persistent_workers=self.persistent_workers
         )
 
+        return loader
+
     def val_dataloader(self):
-        return DataLoader(
+        sampler = None
+        if self.sampler is not None:
+            if isinstance(self.sampler, list):
+                sampler = self.sampler[1]
+
+        loader = DataLoader(
             self.val_dataset,
             batch_size=self.batch_size,
             collate_fn=self.collate_fn,
+            sampler=sampler,
             shuffle=False,
             num_workers=self.num_workers,
             persistent_workers=self.persistent_workers
         )
 
+        return loader
+
     def test_dataloader(self):
-        return DataLoader(
+        sampler = None
+        if self.sampler is not None:
+            if isinstance(self.sampler, list):
+                sampler = self.sampler[2]
+
+        loader = DataLoader(
             self.test_dataset,
             batch_size=self.batch_size,
             collate_fn=self.collate_fn,
+            sampler=sampler,
             shuffle=False,
             num_workers=self.num_workers,
             persistent_workers=self.persistent_workers
         )
+
+        return loader
 
 if __name__ == "__main__":
     tokenizer = AutoTokenizer.from_pretrained("bowphs/GreBerta")
