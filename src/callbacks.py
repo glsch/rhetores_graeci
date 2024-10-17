@@ -29,7 +29,7 @@ class PushToHuggingfaceCallback(Callback):
             self.repo_name_id = self.repo_name_id + self.suffix
 
             try:
-                self.repo_id = self.api.create_repo(self.repo_name_id, exist_ok=True, token=self.token, private=True).repo_id
+                self.repo_id = self.api.create_repo(self.repo_name_id, exist_ok=True, token=self.token, private=self.private).repo_id
                 # create_repo(self.repo_id, private=self.private, token=self.token)
             except Exception as e:
                 print(f"Repository already exists or there was an error: {e}")
