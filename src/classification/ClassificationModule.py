@@ -77,7 +77,7 @@ class ClassificationModule(LightningModule):
         self.model.model.config.id2label = self.trainer.datamodule.id2label
 
     def forward(self, batch):
-        return self.model(batch)
+        return self.model.forward(batch)
 
     def training_step(self, batch, batch_idx):
         outputs = self._process_batch(batch, stage="train")
