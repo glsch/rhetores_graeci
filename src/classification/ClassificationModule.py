@@ -285,12 +285,18 @@ class ClassificationModule(LightningModule):
         df = pd.DataFrame(probs_np)
         df['siglum'] = sigla_np
 
-        print(df.columns)
-
         df_melted = df.melt(id_vars=['siglum'], var_name='class', value_name='probability')
 
-        print(df_melted.columns)
-        print(df_melted)
+
+        df_grouped = df_melted.groupby(['siglum', 'class'])['probability'].mean().reset_index()
+        df_final = df_grouped.pivot(index='siglum', columns='class', values='probability').reset_index()
+
+        df_final.columns.name = None
+        df_final = df_final.rename(columns={col: f'class_{col}' for col in df_final.columns if col != 'siglum'})
+
+        df_final = df_final.assign(author_name=df_final['siglum'].apply(lambda x: self.id2label[x]))
+
+        return df_final
 
         # unique_sigla, counts = torch.unique(sorted_sigla, return_counts=True)
 
