@@ -67,7 +67,7 @@ class ClassificationModule(LightningModule):
         self.epoch_outputs = {"train": [], "val": [], "test": []}
         self.epoch_labels = {"train": [], "val": [], "test": []}
 
-    def on_train_start(self) -> None:
+    def on_fit_start(self) -> None:
         logger.info(f"ClassificationModule.on_train_start() -- Number of classes: {self.num_classes}")
         self.model.model.num_labels = self.num_classes
         self.model.model.config.num_labels = self.num_classes
