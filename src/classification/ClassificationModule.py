@@ -137,7 +137,7 @@ class ClassificationModule(LightningModule):
         # todo: consider adding a callback to the trainer to save the calibration plot
         # todo: consider keeping UNK in the labels for calibration
         optimizer = torch.optim.LBFGS(
-            self.temperature, max_iter=100000
+            self.temperature, lr=0.1, max_iter=100000
         )
 
         logits_list = []
@@ -442,6 +442,10 @@ class ClassificationModule(LightningModule):
         self.temp = torch.nn.Parameter(
             torch.ones(1, device=self.device) * val, requires_grad=True
         )
+
+    @property
+    def temperature(self) -> list:
+        return [self.temp]
 
     def _scale(self, logits: torch.Tensor) -> torch.Tensor:
         """Scale the prediction with the optimal temperature.
