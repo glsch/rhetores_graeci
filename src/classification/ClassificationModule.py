@@ -12,9 +12,13 @@ from transformers.modeling_outputs import SequenceClassifierOutput
 import transformers
 import matplotlib.pyplot as plt
 import seaborn as sns
+from tqdm import tqdm
+from torchmetrics.utilities.data import dim_zero_cat
+from torchmetrics.utilities.plot import _AX_TYPE, _PLOT_OUT_TYPE
 
 from torchmetrics.functional.classification import (multiclass_f1_score, multiclass_recall, multiclass_accuracy, multiclass_precision, multiclass_confusion_matrix)
-from torchmetrics.classification import MulticlassF1Score
+from torchmetrics.classification import MulticlassF1Score, MulticlassCalibrationError
+from torch.nn import CrossEntropyLoss
 
 import numpy as np
 
@@ -24,6 +28,56 @@ from src.logger_config import logger
 # todo: confusion matrix for each epoch
 # todo: attribution of the AR chapters
 # todo: stats for logical divisions of the AR
+
+def _ce_plot(self, ax: _AX_TYPE | None = None) -> _PLOT_OUT_TYPE:
+    fig, ax = plt.subplots(figsize=(6, 6)) if ax is None else (None, ax)
+
+    conf = dim_zero_cat(self.confidences)
+    acc = dim_zero_cat(self.accuracies)
+    bin_width = 1 / self.n_bins
+
+    bin_ids = torch.round(
+        torch.clamp(conf * self.n_bins, 1e-5, self.n_bins - 1 - 1e-5)
+    )
+    val, inverse, counts = bin_ids.unique(
+        return_inverse=True, return_counts=True
+    )
+    counts = counts.float()
+    val_oh = torch.nn.functional.one_hot(
+        val.long(), num_classes=self.n_bins
+    ).float()
+
+    # add 1e-6 to avoid division NaNs
+    values = (
+            val_oh.T
+            @ torch.sum(
+        acc.unsqueeze(1) * torch.nn.functional.one_hot(inverse).float(),
+        0,
+    )
+            / (val_oh.T @ counts + 1e-6)
+    )
+
+    plt.rc("axes", axisbelow=True)
+    ax.hist(
+        x=[bin_width * i * 100 for i in range(self.n_bins)],
+        weights=values.cpu() * 100,
+        bins=[bin_width * i * 100 for i in range(self.n_bins + 1)],
+        alpha=0.7,
+        linewidth=1,
+        edgecolor="#0d559f",
+        color="#1f77b4",
+    )
+
+    ax.plot([0, 100], [0, 100], "--", color="#0d559f")
+    plt.grid(True, linestyle="--", alpha=0.7, zorder=0)
+    ax.set_xlabel("Top-class Confidence (%)", fontsize=16)
+    ax.set_ylabel("Success Rate (%)", fontsize=16)
+    ax.set_xlim(0, 100)
+    ax.set_ylim(0, 100)
+    ax.set_aspect("equal", "box")
+    if fig is not None:
+        fig.tight_layout()
+    return fig, ax
 
 class ClassificationModule(LightningModule):
     def __init__(
@@ -39,6 +93,8 @@ class ClassificationModule(LightningModule):
             num_warmup_steps: NonNegativeInt = 0,
             push_to_hub: bool = False,
             confidence_threshold: NonNegativeFloat = 0.8,
+            init_w: float = 1.0,
+            init_b: float = 0.0,
     ):
         super().__init__()
         self.task = task
@@ -61,6 +117,114 @@ class ClassificationModule(LightningModule):
 
         self.epoch_outputs = {"train": [], "val": [], "test": []}
         self.epoch_labels = {"train": [], "val": [], "test": []}
+
+        self.set_temperature(init_w, init_b)
+
+        self.calibrated = False
+        
+    def on_test_start(self):
+        calibration_dataloader = self.trainer.datamodule.val_dataloader()
+
+        with torch.inference_mode(False):
+            self.train(mode=True)
+            self.temp_w.requires_grad = True
+            self.temp_b.requires_grad = True
+            self.vector_calibration(calibration_dataloader)
+            
+    def vector_calibration(self, calibration_dataloader):
+        """
+        Calibrate the model by optimizing a vector which is applied to the model's logits.
+        :param calibration_dataloader:
+        :return:
+        """
+        # todo: consider adding a callback to the trainer to save the calibration plot
+        # todo: consider keeping UNK in the labels for calibration
+        optimizer = torch.optim.LBFGS(
+            self.temperature, lr=0.1, max_iter=100000
+        )
+
+        logits_list = []
+        labels_list = []
+
+        with torch.no_grad():
+            for batch in tqdm(calibration_dataloader, disable=False):
+                model_outputs = self(batch)
+                logits_list.append(model_outputs.logits)
+                labels_list.append(batch.target)
+
+        all_logits = torch.cat(logits_list).detach().to(self.device)
+        all_labels = torch.cat(labels_list).detach().to(self.device)
+
+        logger.debug(f"Temperature-weight: {self.temperature[0]}")
+        logger.debug(f"Temperature-bias: {self.temperature[1]}")
+
+        MulticlassCalibrationError.plot = _ce_plot
+        ce = MulticlassCalibrationError(num_classes=self.num_heads, n_bins=15, ignore_index=-100)
+        ce.update(torch.softmax(all_logits, dim=1), all_labels)
+        self.log("test/mce_bc", ce.compute(), logger=True, on_step=False, on_epoch=True)
+        logger.info(f"Calibration error (before calibration): {ce.compute()}")
+
+        fig, ax = plt.subplots(figsize=(25, 25))
+        ce.plot(ax=ax)
+
+        save_dir = self.trainer.logger.save_dir
+        if save_dir is None:
+            save_dir = self.trainer.default_root_dir
+
+        logger.debug(f"MultiheadedClassifier.vector_calibration() -- Saving the plot to {save_dir}")
+
+        img_path = os.path.join(save_dir, f"top_label_confidence_vector_ac.png")
+        plt.savefig(img_path)
+        plt.close(fig)
+
+        self.trainer.logger.log_image(f"top_label_confidence_vector_bc", images=[img_path])
+
+        criterion = CrossEntropyLoss(ignore_index=-100).requires_grad_(True)
+
+        def calib_eval() -> float:
+            optimizer.zero_grad()
+            loss = criterion(self._scale(all_logits), all_labels)
+            loss.backward()
+            return loss
+
+        optimizer.step(calib_eval)
+
+        self.calibrated = True
+
+        logger.debug(f"Calibrated temperature-weight: {self.temperature[0]}")
+        logger.debug(f"Calibrated temperature-bias: {self.temperature[1]}")
+
+        ce.reset()
+
+        logits_list = []
+        labels_list = []
+        with torch.no_grad():
+            for batch in tqdm(calibration_dataloader, disable=False):
+                model_outputs = self(batch)
+                logits_list.append(model_outputs.logits)
+                labels_list.append(batch.target)
+
+        all_logits = torch.cat(logits_list).detach().to(self.device)
+        all_labels = torch.cat(labels_list).detach().to(self.device)
+
+        ce.update(torch.softmax(self._scale(all_logits), dim=1), all_labels)
+        self.log("test/mce_ac", ce.compute(), logger=True, on_step=False, on_epoch=True)
+        logger.info(f"Calibration error (after calibration): {ce.compute()}")
+
+        fig, ax = plt.subplots(figsize=(25, 25))
+        ce.plot(ax=ax)
+
+        save_dir = self.trainer.logger.save_dir
+        if save_dir is None:
+            save_dir = self.trainer.default_root_dir
+
+        logger.debug(f"MultiheadedClassifier.vector_calibration() -- Saving the plot to {save_dir}")
+
+        img_path = os.path.join(save_dir, f"top_label_confidence_vector_ac.png")
+        plt.savefig(img_path)
+        plt.close(fig)
+
+        self.trainer.logger.log_image(f"top_label_confidence_vector_ac", images=[img_path])
 
     def forward(self, batch):
         return self.model.forward(**batch)
@@ -269,6 +433,29 @@ class ClassificationModule(LightningModule):
         # reset MulticlassF1Score
         mcls_f1.reset()
 
+    def set_temperature(self, val_w: float, val_b: float) -> None:
+        """Set the temperature to a fixed value.
+
+        Args:
+            val_w (float): Weight temperature value.
+            val_b (float): Bias temperature value.
+        """
+
+        self.temp_w = torch.nn.Parameter(
+            torch.ones(self.num_labels, device=self.device) * val_w,
+            requires_grad=True,
+        )
+
+        self.temp_b = torch.nn.Parameter(
+            torch.ones(self.num_labels, device=self.device) * val_b,
+            requires_grad=True,
+        )
+
+        self.temperature = torch.nn.ParameterList([self.temp_w, self.temp_b])
+
+    def _scale(self, logits):
+        return self.temp_w * logits + self.temp_b
+
     def _process_batch(self, batch, stage="train") -> SequenceClassifierOutput:
         assert self.num_labels is not None, "Number of classes must be set before processing a batch"
         logger.debug(f"ClassificationModule._process_batch() -- Processing batch for stage: {stage}")
@@ -283,8 +470,21 @@ class ClassificationModule(LightningModule):
 
         # saving for epoch
         classifier_output["labels"] = batch["labels"]
-        self.epoch_outputs[stage].append(classifier_output.logits)
-        self.epoch_labels[stage].append(classifier_output.labels)
+
+        logits2save = classifier_output.logits.clone().detach()
+        labels2save = classifier_output.labels.clone().detach()
+
+        if self.calibrated:
+            logits2save = self._scale(logits2save)
+
+        # self.save_logits(
+        #     logits=logits2save,
+        #     labels=batch.target.clone().detach(),
+        #     stage=stage
+        # )
+
+        self.epoch_outputs[stage].append(logits2save)
+        self.epoch_labels[stage].append(labels2save)
 
         return classifier_output
 
