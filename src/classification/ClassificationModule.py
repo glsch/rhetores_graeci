@@ -311,12 +311,12 @@ class ClassificationModule(LightningModule):
         # if the difference between the top two probabilities is less than the threshold,
         # we do not predict
         # (consistently with PAN 2019 and our own baselines)
-        rejection_threshold = self.confidence_threshold
+        rejection_threshold = confidence_threshold
         method = "pt"
         if method == "pt":
             top_probs, top_indices = torch.max(probabilities, dim=1)
             # Compare the top probability with the rejection threshold
-            predictions = torch.where(top_probs > 0.80, top_indices, reject_label)
+            predictions = torch.where(top_probs > rejection_threshold, top_indices, reject_label)
 
         elif method == "difference":
             logger.debug(
