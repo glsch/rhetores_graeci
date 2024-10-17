@@ -33,8 +33,8 @@ class AutoModelForSequenceClassificationWrapper(torch.nn.Module):
                     self.tokenizer = AutoTokenizer.from_pretrained("nlpaueb/bert-base-greek-uncased-v1")
 
     def forward(self, x):
-        if "labels" in x:
-            del x["labels"]
+        #if "labels" in x:
+        #    del x["labels"]
         return self.model(**x)
 
 class ClassificationModule(LightningModule):
