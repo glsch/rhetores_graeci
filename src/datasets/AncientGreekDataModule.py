@@ -24,7 +24,7 @@ import pandas as pd
 from torch.utils.data import Dataset, DataLoader
 
 from src.MlmTuningModule import AutoModelForMaskedLMWrapper
-from src.classification.ClassificationModule import AutoModelForSequenceClassificationWrapper
+
 from src.datasets.MlmDataset import MLMDataset
 from src.datasets.ClassificationDataset import ClassificationDataset
 from src.logger_config import logger
@@ -322,12 +322,13 @@ class AncientGreekDataModule(LightningDataModule):
 
         if self.dataset is None:
             self.dataset = pd.read_csv(self.preprocessed_dataset_path)
-            self.train_df = self.dataset[self.dataset["split"] == "train"]
-            self.val_df = self.dataset[self.dataset["split"] == "val"]
-            self.test_df = self.dataset[self.dataset["split"] == "test"]
 
         else:
             logger.info(f"AncientGreekDataModule.setup() -- Dataset already loaded")
+
+        self.train_df = self.dataset[self.dataset["split"] == "train"]
+        self.val_df = self.dataset[self.dataset["split"] == "val"]
+        self.test_df = self.dataset[self.dataset["split"] == "test"]
 
         if self.task == "mlm":
             logger.info(f"AncientGreekDataModule.setup() -- Model is subclass of {AutoModelForMaskedLMWrapper}: {self.trainer.model.model.__class__.__name__}")
