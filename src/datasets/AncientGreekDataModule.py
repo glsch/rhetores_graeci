@@ -84,16 +84,17 @@ class AncientGreekDataModule(LightningDataModule):
 
         self.prepared = False
 
-    @property
-    def num_classes(self):
-        if self._num_classes is None:
-            self.setup(stage="fit")
-
-        return self._num_classes
+    # @property
+    # def num_classes(self):
+    #     if self._num_classes is None:
+    #         model = AutoModelForSequenceClassificationWrapper()
+    #         self.setup(stage="fit")
+    #
+    #     return self._num_classes
 
     def prepare_data(self) -> None:
-        if self.prepared:
-            return
+        #if self.prepared:
+        #    return
 
         def expand_levels(levels):
             row_dict = {}
@@ -267,7 +268,7 @@ class AncientGreekDataModule(LightningDataModule):
 
                 # todo: add label encoding somewhere here
             self.dataset.to_csv(os.path.join(PathManager.data_path, "preprocessed", f"{self.fname}.csv"), index=False)
-            self.prepared = True
+            #self.prepared = True
         else:
             self.dataset = pd.read_csv(os.path.join(PathManager.data_path, "preprocessed", f"{self.fname}.csv"))
 
@@ -277,10 +278,10 @@ class AncientGreekDataModule(LightningDataModule):
         dataset_cls = None
         self.collate_fn = None
 
-        if model is not None and isinstance(model, AutoModelForSequenceClassificationWrapper):
-            self.task = "classification"
-            if not os.path.exists(os.path.join(PathManager.data_path, "preprocessed", f"{self.fname}.csv")):
-                self.prepare_data()
+        # if model is not None and isinstance(model, AutoModelForSequenceClassificationWrapper):
+        #     self.task = "classification"
+        #     if not os.path.exists(os.path.join(PathManager.data_path, "preprocessed", f"{self.fname}.csv")):
+        #         self.prepare_data()
 
         if model is None:
             model = self.trainer.model.model
