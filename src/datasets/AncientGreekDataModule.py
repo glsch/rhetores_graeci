@@ -220,10 +220,10 @@ class AncientGreekDataModule(LightningDataModule):
                 # retain only the authors for the study
                 self.dataset = self.dataset[self.dataset["author_id"].isin(study_author_ids) | self.dataset["author_id"].isin(unk_author_ids)]
                 # Dionysius Ars Rhetorica goes to predict corpus
-                predict_df = self.dataset[self.dataset["author_id"] == 81 & self.dataset["work_id"] == 16]
+                predict_df = self.dataset[(self.dataset["author_id"] == 81) & (self.dataset["work_id"] == 16)]
                 predict_df = predict_df.assign(split="predict")
 
-                self.dataset = self.dataset[~(self.dataset["author_id"] == 81 & self.dataset["work_id"] == 16)]
+                self.dataset = self.dataset[~((self.dataset["author_id"] == 81) & (self.dataset["work_id"] == 16))]
 
                 # all minor authors go to UNK, which will only be in the test set
                 # therefore, we can create the base of this dataset
@@ -249,14 +249,12 @@ class AncientGreekDataModule(LightningDataModule):
                 logger.info(f"AncientGreekDataModule.prepare_data() -- Number of authors unk_df: {unk_df['author_id'].unique().tolist()}")
                 logger.info(f"AncientGreekDataModule.prepare_data() -- Number of authors val_df: {val_df['author_id'].unique().tolist()}")
 
-                logger.info(f"AncientGreekDataModule.prepare_data() -- Max samples: {self.dataset.groupby('author_id').value_counts().max()}")
-                logger.info(f"AncientGreekDataModule.prepare_data() -- Min samples: {self.dataset.groupby('author_id').value_counts().min()}")
+                logger.info(f"AncientGreekDataModule.prepare_data() -- Max samples: {self.dataset.groupby('author_id').size().max()}")
+                logger.info(f"AncientGreekDataModule.prepare_data() -- Min samples: {self.dataset.groupby('author_id').size().min()}")
 
                 logger.info(f"AncientGreekDataModule.prepare_data() -- Dataset columns: {self.dataset.columns}")
 
                 # todo: add label encoding somewhere here
-
-
             self.dataset.to_csv(os.path.join(PathManager.data_path, "preprocessed", f"{self.fname}.csv"), index=False)
         else:
             self.dataset = pd.read_csv(os.path.join(PathManager.data_path, "preprocessed", f"{self.fname}.csv"))
@@ -328,6 +326,7 @@ class AncientGreekDataModule(LightningDataModule):
 
 if __name__ == "__main__":
     tokenizer = AutoTokenizer.from_pretrained("bowphs/GreBerta")
-    dm = AncientGreekDataModule(epithets=["Rhet.", "Orat."], tokenizer=tokenizer, chunk_type=TextChunkType.CHUNK, overlap=0.0, chunk_length=512)
+    model = AutoModelForSequenceClassificationWrapper(pretrained_model_name_or_path="bowphs/GreBerta")
+    dm = AncientGreekDataModule(epithets=["Rhet.", "Orat."], tokenizer=tokenizer, model=model, chunk_type=TextChunkType.CHUNK, overlap=0.0, chunk_length=512)
 
     dm.prepare_data()

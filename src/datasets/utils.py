@@ -7,7 +7,8 @@ from src.logger_config import logger
 
 def download_dataset():
     fname = os.path.join(PathManager.preprocessed_path)
-    link = open(PathManager.access_key).read().strip()
+    link = os.getenv("GOOGLE_LINK", None)
+    assert link is not None, "Please provide a link to the preprocessed data"
     archive_path = os.path.join(PathManager.preprocessed_path, "preprocessed.zip")
     logger.info(f"download_preprocessed_corpus() -- Checking {archive_path}")
     if not os.path.exists(archive_path):

@@ -43,6 +43,14 @@ trainer:
       resume_from: null
       settings: null
   callbacks:
+  - class_path: lightning.pytorch.cli.SaveConfigCallback
+    init_args:
+      parser: null
+      config: null
+      config_filename: config.yaml
+      overwrite: false
+      multifile: false
+      save_to_log_dir: true
   - class_path: lightning.pytorch.callbacks.ModelCheckpoint
     init_args:
       dirpath: null
@@ -75,7 +83,7 @@ trainer:
       monitor: val/loss
       min_delta: 0.01
       patience: 3
-      verbose: false
+      verbose: true
       mode: min
       strict: true
       check_finite: true
