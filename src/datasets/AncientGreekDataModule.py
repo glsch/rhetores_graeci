@@ -52,10 +52,16 @@ class AncientGreekDataModule(LightningDataModule):
         self.task = "mlm"
         self.fname = "preprocessed_dataset"
         if isinstance(model, AutoModelForMaskedLMWrapper):
+            logger.info(f"AncientGreekDataModule.__init__() -- Model is subclass of {AutoModelForMaskedLMWrapper}: {model.__class__.__name__}")
+
             self.fname = "mlm_" + self.fname
         elif isinstance(model, AutoModelForSequenceClassificationWrapper):
+            logger.info(
+                f"AncientGreekDataModule.__init__() -- Model is subclass of {AutoModelForSequenceClassificationWrapper}: {model.__class__.__name__}")
             self.task = "classification"
             self.fname = "classification_" + self.fname
+
+        logger.info(f"AncientGreekDataModule.__init__() -- Task {self.task}")
 
         self.tokenizer = tokenizer
         self.chunk_type = chunk_type
@@ -99,7 +105,7 @@ class AncientGreekDataModule(LightningDataModule):
         if not (os.path.exists(self.dataset_path) and os.path.exists(self.author_metadata_path)):
             download_dataset()
 
-        if not os.path.exists(os.path.join(PathManager.data_path, "preprocessed", "preprocessed_dataset.csv")):
+        if not os.path.exists(os.path.join(PathManager.data_path, "preprocessed", f"{self.fname}.csv")):
             # opening dataset and metadata
             pd_dataset = PandasDataset(dataset_path=self.dataset_path, author_metadata_path=self.author_metadata_path)
 
