@@ -314,7 +314,9 @@ class ClassificationModule(LightningModule):
         rejection_threshold = confidence_threshold
         method = "pt"
         if method == "pt":
+            logger.info(f"ClassificationModule.make_predictions() -- Applying threshold: {rejection_threshold}")
             top_probs, top_indices = torch.max(probabilities, dim=1)
+            logger.info(f"ClassificationModule.make_predictions() -- Top probs: {top_probs}, Top indices: {top_indices}")
             # Compare the top probability with the rejection threshold
             predictions = torch.where(top_probs > rejection_threshold, top_indices, reject_label)
 
