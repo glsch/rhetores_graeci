@@ -297,17 +297,26 @@ class ClassificationModule(LightningModule):
 
             # Calculate average of top-5 predictions
             avg_top5 = top5_logits.mean(dim=0)
+            avg_top5_indices = top5_indices.mode(dim=0).values
+
+            # Convert indices to labels
+            top5_labels = [self.is2label[idx.item()] for idx in avg_top5_indices]
 
             # Store results
-            results.append({
+            result = {
                 'sigla': sigla.item(),
                 'avg_top1': avg_top5[0].item(),
                 'avg_top2': avg_top5[1].item(),
                 'avg_top3': avg_top5[2].item(),
                 'avg_top4': avg_top5[3].item(),
                 'avg_top5': avg_top5[4].item(),
-            })
-
+                'top1_label': top5_labels[0],
+                'top2_label': top5_labels[1],
+                'top3_label': top5_labels[2],
+                'top4_label': top5_labels[3],
+                'top5_label': top5_labels[4],
+            }
+            results.append(result)
         # Convert results to DataFrame
         df = pd.DataFrame(results)
 
