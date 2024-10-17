@@ -289,9 +289,9 @@ class ClassificationModule(LightningModule):
         df_final = df_grouped.pivot(index='siglum', columns='class', values='probability').reset_index()
 
         df_final.columns.name = None
-        df_final = df_final.rename(columns={col: f'class_{col}' for col in df_final.columns if col != 'siglum'})
+        df_final = df_final.rename(columns={col: self.id2label[col] for col in df_final.columns if col != 'siglum'})
 
-        df_final = df_final.assign(author_name=df_final['class'].apply(lambda x: self.id2label[x]))
+        #df_final = df_final.assign(author_name=df_final['class'].apply(lambda x: self.id2label[x]))
 
         print(df_final)
 
