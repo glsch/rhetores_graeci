@@ -345,7 +345,7 @@ class AncientGreekDataModule(LightningDataModule):
             self.collate_fn = DataCollatorWithPadding(return_tensors="pt", tokenizer=self.tokenizer, padding="max_length", max_length=512)
 
             m = (self.batch_size // self._num_labels) + 1
-            length_before_new_iter = int(500 * m * self.batch_size)
+            length_before_new_iter = int(500 * self.batch_size)
             # defining MPerClassSampler's for DataLoaders
             self.sampler = [
                 MPerClassSampler(self.train_df["label"].tolist(), m=m),
