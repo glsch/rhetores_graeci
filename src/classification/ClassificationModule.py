@@ -10,6 +10,13 @@ import torch
 from transformers import SchedulerType, get_scheduler, AutoModelForSequenceClassification, AutoTokenizer, PreTrainedTokenizer, PreTrainedTokenizerFast
 from transformers.modeling_outputs import SequenceClassifierOutput
 import transformers
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from torchmetrics.functional.classification import (multiclass_f1_score, multiclass_recall, multiclass_accuracy, multiclass_precision, multiclass_confusion_matrix)
+from torchmetrics.classification import MulticlassF1Score
+
+import numpy as np
 
 
 from src.logger_config import logger
@@ -61,13 +68,28 @@ class ClassificationModule(LightningModule):
         outputs = self._process_batch(batch, stage="train")
         return outputs.loss
 
+    def on_train_epoch_end(self) -> None:
+        logger.debug(f"ClassificationModule.on_train_epoch_end()")
+        with torch.no_grad():
+            self.compute_metrics(stage="train")
+
     def validation_step(self, batch, batch_idx):
         outputs = self._process_batch(batch, stage="val")
         return outputs.loss
 
+    def on_validation_epoch_end(self) -> None:
+        logger.debug(f"ClassificationModule.on_validation_epoch_end()")
+        with torch.no_grad():
+            self.compute_metrics(stage="val")
+
     def test_step(self, batch, batch_idx):
         outputs = self._process_batch(batch, stage="test")
         return outputs.loss
+
+    def on_test_epoch_end(self) -> None:
+        logger.debug(f"ClassificationModule.on_test_epoch_end()")
+        with torch.no_grad():
+            self.compute_metrics(stage="test")
 
     def configure_optimizers(self):
         no_decay = ["bias",
@@ -114,16 +136,147 @@ class ClassificationModule(LightningModule):
                 "name": self.lr_scheduler_type
             },
         }
+    
+    def compute_metrics(self, stage="train"):
+        """
+        A helper to compute accuracy metrics for classification.
+        :param stage: The stage.
+        :type stage:  str
+        :return:
+        """
+        logger.debug(f"MultiheadedClassifier.compute_metrics() -- Concatenating epoch logits and labels")
+        save_dir = self.trainer.logger.save_dir
+
+        if save_dir is None:
+            save_dir = self.trainer.default_root_dir
+
+        logger.debug(f"MultiheadedClassifier.compute_metrics() -- Saving the plot to {save_dir}")
+
+        all_logits = torch.cat(self.epoch_logits[stage], dim=0)
+        all_labels = torch.cat(self.epoch_labels[stage], dim=0)
+        logger.info(f"Documents processed: {all_logits.shape[0]}")
+
+        # if we are not in the test stage, we ignore the "<UNK>" label, as we only train on "real" classes
+        # UNK will be implemented as a separate class in the test when it'll be defined
+        # as the model's insufficient confidence
+        num_classes = self.num_heads
+        ignore_index = -100
+        class_labels = [self.id2label[i] for i in range(self.num_heads)]
+        # if we are testing, we need to preserve the "<UNK>" label
+        if stage in ("test"):
+            num_classes = self.num_heads + 1
+            ignore_index = None
+            class_labels = [self.id2label[i] for i in range(self.num_heads)] + ["<UNK>"]
+            all_labels[all_labels == -100] = self.num_heads
+
+        logger.debug(f"MultiheadedClassifier.compute_metrics() -- Predicting...")
+        predictions = self.make_predictions(logits=all_logits, target=all_labels, stage=stage, pt=None)
+
+        logger.debug(f"MultiheadedClassifier.compute_metrics() -- Transferring results to CPU...")
+        predictions = predictions.cpu().detach()
+
+        for i in range(predictions.shape[0]):
+            logger.debug(f"Document {i} -- Prediction: {predictions[i]}")
+
+        labels = all_labels.cpu().detach()
+
+        # metrics
+        # todo: consider using metric collection
+        # however, functional interface is more tolerant to the dynamic number of classes, as in our case
+        logger.debug(f"MultiheadedClassifier.compute_metrics() -- Computing accuracy metrics...")
+        f1 = multiclass_f1_score(predictions, labels, num_classes=num_classes, ignore_index=ignore_index)
+        accuracy = multiclass_accuracy(predictions, labels, num_classes=num_classes, ignore_index=ignore_index)
+        precision = multiclass_precision(predictions, labels, num_classes=num_classes, ignore_index=ignore_index)
+        recall = multiclass_recall(predictions, labels, num_classes=num_classes, ignore_index=ignore_index)
+        logger.debug(f"MultiheadedClassifier.compute_metrics() -- Accuracy metrics: F1 {f1}, accuracy {accuracy}, precision {precision}, recall {recall}")
+
+        ##########################
+        ### Per class F1 score
+        #########################
+
+        # todo: consider adding others, too
+        mcls_f1 = MulticlassF1Score(num_classes=num_classes, ignore_index=ignore_index, average=None)
+        mcls_f1.update(predictions, labels)
+
+        # plot F1 per class barchart
+        # sorting by F1 score (?)
+        f1_per_class = mcls_f1.compute().detach().cpu().numpy()
+        sorted_indices = np.argsort(f1_per_class)
+        sorted_f1_per_class = f1_per_class[sorted_indices]
+        sorted_class_labels = np.array(class_labels)[sorted_indices]
+        fig, ax = plt.subplots(figsize=(25, 25))
+        bars = ax.bar(sorted_class_labels, sorted_f1_per_class)
+        for bar, f1_score in zip(bars, sorted_f1_per_class):
+            height = bar.get_height()
+            ax.annotate(f'{f1_score:.2f}',
+                        xy=(bar.get_x() + bar.get_width() / 2, height),
+                        xytext=(0, 3),
+                        textcoords='offset points',
+                        ha='center', va='bottom', fontsize=12)
+        ax.set_xlabel("Classes", fontsize=20)
+        ax.set_ylabel("F1 Score", fontsize=20)
+        ax.set_xticks(range(num_classes))
+        ax.set_xticklabels(sorted_class_labels, rotation=90, ha='right', fontsize=18)
+        ax.set_title(f"F1 Score per author ('{stage}')", fontsize=25)
+        ax.set_ylim(0, 1.0)
+
+        img_path = os.path.join(save_dir, f"f1_class_{stage}.png")
+        plt.savefig(img_path)
+        plt.close()
+
+        self.trainer.logger.log_image(f"f1_class_{stage}", images=[img_path], step=self.current_epoch)
+
+        ######################
+        ## Confusion matrix
+        ######################
+        conf_matrix = multiclass_confusion_matrix(predictions, labels, num_classes=num_classes, ignore_index=ignore_index)
+        conf_matrix = conf_matrix.cpu().detach().numpy()
+
+        logger.debug(f"MultiheadedClassifier.compute_metrics() -- Confusion matrix: {conf_matrix}")
+        logger.debug(f"MultiheadedClassifier.compute_metrics() -- Creating a plot...")
+
+        # plot confusion matrix
+        plt.figure(figsize=(25, 25))
+        sns.heatmap(conf_matrix, annot=True, fmt='d',
+                    cmap='Blues',
+                    xticklabels=class_labels, yticklabels=class_labels)
+
+        plt.xlabel('Predicted', fontsize=20)
+        plt.ylabel('True', fontsize=20)
+        plt.title(f'Confusion Matrix ({stage.upper()})', fontsize=25)
+        plt.xticks(rotation=90, fontsize=18)
+        plt.yticks(fontsize=18)
+
+        save_dir = self.trainer.logger.save_dir
+        if save_dir is None:
+            save_dir = self.trainer.default_root_dir
+        logger.debug(
+            f"MultiheadedClassifier.compute_metrics() -- Saving the plot to {save_dir}")
+        img_path = os.path.join(save_dir, f"confusion_matrix_{stage}_epoch_{self.current_epoch}.png")
+        plt.savefig(img_path)
+        plt.close()
+
+        self.trainer.logger.log_image(f"confusion_matrix_{stage}", images=[img_path], step=self.current_epoch)
+
+        # log everything
+        self.log(f"{stage}/f1", f1, logger=True, on_epoch=True)
+        self.log(f"{stage}/accuracy", accuracy, logger=True, on_epoch=True)
+        self.log(f"{stage}/precision", precision, logger=True, on_epoch=True)
+        self.log(f"{stage}/recall", recall, logger=True, on_epoch=True)
+
+        self.epoch_logits[stage] = []
+        self.epoch_labels[stage] = []
+        # reset MulticlassF1Score
+        mcls_f1.reset()
 
     def _process_batch(self, batch, stage="train") -> SequenceClassifierOutput:
         assert self.num_labels is not None, "Number of classes must be set before processing a batch"
-        logger.info(f"ClassificationModule._process_batch() -- Processing batch for stage: {stage}")
-        logger.info(f"ClassificationModule._process_batch() -- Batch: {batch}")
-        logger.info(f"ClassificationModule._process_batch() -- Batch input_ids: {batch['input_ids'].shape}")
-        logger.info(f"ClassificationModule._process_batch() -- Batch labels: {batch['labels'].shape}")
-        logger.info(f"ClassificationModule._process_batch() -- Batch labels: {batch['labels']}")
-        logger.info(f"ClassificationModule._process_batch() -- Num classes: {self.num_labels}")
-
+        logger.debug(f"ClassificationModule._process_batch() -- Processing batch for stage: {stage}")
+        logger.debug(f"ClassificationModule._process_batch() -- Batch: {batch}")
+        logger.debug(f"ClassificationModule._process_batch() -- Batch input_ids: {batch['input_ids'].shape}")
+        logger.debug(f"ClassificationModule._process_batch() -- Batch labels: {batch['labels'].shape}")
+        logger.debug(f"ClassificationModule._process_batch() -- Batch labels: {batch['labels']}")
+        logger.debug(f"ClassificationModule._process_batch() -- Num classes: {self.num_labels}")
 
         classifier_output = self.forward(batch)
         self.log(f"{stage}/loss", classifier_output.loss, on_step=False, on_epoch=True, prog_bar=True, logger=True)
@@ -146,15 +299,11 @@ class ClassificationModule(LightningModule):
         if stage in ("test"):
             reject_label = self.num_labels
 
-        logger.debug(
-            f"ClassificationModule.make_predictions() -- Reject label: {reject_label} (stage: {stage})")
-
-        logger.debug(
-            f"ClassificationModule.make_predictions() -- Getting probabilities...")
+        logger.debug(f"ClassificationModule.make_predictions() -- Reject label: {reject_label} (stage: {stage})")
+        logger.debug(f"ClassificationModule.make_predictions() -- Getting probabilities...")
 
         probabilities = torch.nn.functional.softmax(logits, dim=1)
-        logger.debug(
-            f"ClassificationModule.make_predictions() -- Probabilities: {probabilities}")
+        logger.debug(f"ClassificationModule.make_predictions() -- Probabilities: {probabilities}")
 
         if not stage in ("test", "predict"):
             return torch.argmax(probabilities, dim=1)
