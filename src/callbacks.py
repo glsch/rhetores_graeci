@@ -76,7 +76,7 @@ class PushToHuggingfaceCallback(Callback):
             #     commit_message=f"Upload model after epoch {epoch}",
             #     use_auth_token=self.token
             # )
-        logger.info(f"Model uploaded to {self.repo_id} after epoch {epoch}")
+            logger.info(f"Model uploaded to {self.repo_id} after epoch {epoch}")
 
     def on_exception(self, trainer, pl_module, exception):
         logger.info(f"An exception occurred: {exception}")
