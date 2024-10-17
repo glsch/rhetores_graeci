@@ -350,6 +350,8 @@ class AncientGreekDataModule(LightningDataModule):
         self.test_df = self.dataset[self.dataset["split"] == "test"]
         self.predict_df = self.dataset[self.dataset["split"] == "predict"]
 
+        self.predict_df = self.predict_df.assign(siglum=lambda x: x["siglum"].astype(int))
+
         if self.task == "mlm":
             logger.info(f"AncientGreekDataModule.setup() -- Model is subclass of {AutoModelForMaskedLMWrapper}: {self.trainer.model.model.__class__.__name__}")
             dataset_cls = MLMDataset
