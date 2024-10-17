@@ -136,7 +136,7 @@ class ClassificationModule(LightningModule):
         }
 
     def _process_batch(self, batch, stage="train") -> SequenceClassifierOutput:
-        classifier_output = self.model(**batch)
+        classifier_output = self(batch)
         self.log(f"{stage}/loss", classifier_output.loss, on_step=False, on_epoch=True, prog_bar=True, logger=True)
 
         # saving for epoch
