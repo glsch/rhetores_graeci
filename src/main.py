@@ -77,7 +77,7 @@ class RhetoresGraecigCli(LightningCLI):
             "trainer.check_val_every_n_epoch": 1,
             "trainer.enable_checkpointing": True,
             "trainer.callbacks": callbacks,
-            # "data.model_class": "transformers.AutoModelForSequenceClassification",
+            "data.model_class": "transformers.AutoModelForSequenceClassification",
             "data.epithets": default_epithets,
             # # this does not work correctly as config would contain a 'proj_size' key which is only supported by LSTM, but is
             # # also present in the config for any subclass of RNNBase
