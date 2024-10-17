@@ -536,7 +536,9 @@ class ClassificationModule(LightningModule):
             del batch["siglum"]
 
         classifier_output = self.forward(batch)
-        self.log(f"{stage}/loss", classifier_output.loss, on_step=False, on_epoch=True, prog_bar=True, logger=True)
+
+        if stage != "predict":
+            self.log(f"{stage}/loss", classifier_output.loss, on_step=False, on_epoch=True, prog_bar=True, logger=True)
 
         # saving for epoch
         classifier_output["labels"] = batch["labels"]
