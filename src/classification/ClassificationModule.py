@@ -144,13 +144,13 @@ class ClassificationModule(LightningModule):
         :type stage:  str
         :return:
         """
-        logger.debug(f"MultiheadedClassifier.compute_metrics() -- Concatenating epoch logits and labels")
+        logger.debug(f"ClassificationModule.compute_metrics() -- Concatenating epoch logits and labels")
         save_dir = self.trainer.logger.save_dir
 
         if save_dir is None:
             save_dir = self.trainer.default_root_dir
 
-        logger.debug(f"MultiheadedClassifier.compute_metrics() -- Saving the plot to {save_dir}")
+        logger.debug(f"ClassificationModule.compute_metrics() -- Saving the plot to {save_dir}")
 
         all_logits = torch.cat(self.epoch_logits[stage], dim=0)
         all_labels = torch.cat(self.epoch_labels[stage], dim=0)
@@ -159,20 +159,19 @@ class ClassificationModule(LightningModule):
         # if we are not in the test stage, we ignore the "<UNK>" label, as we only train on "real" classes
         # UNK will be implemented as a separate class in the test when it'll be defined
         # as the model's insufficient confidence
-        num_classes = self.num_heads
+
         ignore_index = -100
-        class_labels = [self.id2label[i] for i in range(self.num_heads)]
+        class_labels = [self.id2label[i] for i in range(len(self.id2label))]
         # if we are testing, we need to preserve the "<UNK>" label
         if stage in ("test"):
-            num_classes = self.num_heads + 1
             ignore_index = None
-            class_labels = [self.id2label[i] for i in range(self.num_heads)] + ["<UNK>"]
-            all_labels[all_labels == -100] = self.num_heads
+            class_labels = [self.id2label[i] for i in range(len(self.id2label))] + ["<UNK>"]
+            all_labels[all_labels == -100] = self.num_labels
 
-        logger.debug(f"MultiheadedClassifier.compute_metrics() -- Predicting...")
-        predictions = self.make_predictions(logits=all_logits, target=all_labels, stage=stage, pt=None)
+        logger.debug(f"ClassificationModule.compute_metrics() -- Predicting...")
+        predictions = self.make_predictions(logits=all_logits, target=all_labels, stage=stage, confidence_threshold=None)
 
-        logger.debug(f"MultiheadedClassifier.compute_metrics() -- Transferring results to CPU...")
+        logger.debug(f"ClassificationModule.compute_metrics() -- Transferring results to CPU...")
         predictions = predictions.cpu().detach()
 
         for i in range(predictions.shape[0]):
@@ -183,19 +182,19 @@ class ClassificationModule(LightningModule):
         # metrics
         # todo: consider using metric collection
         # however, functional interface is more tolerant to the dynamic number of classes, as in our case
-        logger.debug(f"MultiheadedClassifier.compute_metrics() -- Computing accuracy metrics...")
-        f1 = multiclass_f1_score(predictions, labels, num_classes=num_classes, ignore_index=ignore_index)
-        accuracy = multiclass_accuracy(predictions, labels, num_classes=num_classes, ignore_index=ignore_index)
-        precision = multiclass_precision(predictions, labels, num_classes=num_classes, ignore_index=ignore_index)
-        recall = multiclass_recall(predictions, labels, num_classes=num_classes, ignore_index=ignore_index)
-        logger.debug(f"MultiheadedClassifier.compute_metrics() -- Accuracy metrics: F1 {f1}, accuracy {accuracy}, precision {precision}, recall {recall}")
+        logger.debug(f"ClassificationModule.compute_metrics() -- Computing accuracy metrics...")
+        f1 = multiclass_f1_score(predictions, labels, num_classes=self.num_labels, ignore_index=ignore_index)
+        accuracy = multiclass_accuracy(predictions, labels, num_classes=self.num_labels, ignore_index=ignore_index)
+        precision = multiclass_precision(predictions, labels, num_classes=self.num_labels, ignore_index=ignore_index)
+        recall = multiclass_recall(predictions, labels, num_classes=self.num_labels, ignore_index=ignore_index)
+        logger.debug(f"ClassificationModule.compute_metrics() -- Accuracy metrics: F1 {f1}, accuracy {accuracy}, precision {precision}, recall {recall}")
 
         ##########################
         ### Per class F1 score
         #########################
 
         # todo: consider adding others, too
-        mcls_f1 = MulticlassF1Score(num_classes=num_classes, ignore_index=ignore_index, average=None)
+        mcls_f1 = MulticlassF1Score(num_classes=self.num_labels, ignore_index=ignore_index, average=None)
         mcls_f1.update(predictions, labels)
 
         # plot F1 per class barchart
@@ -215,7 +214,7 @@ class ClassificationModule(LightningModule):
                         ha='center', va='bottom', fontsize=12)
         ax.set_xlabel("Classes", fontsize=20)
         ax.set_ylabel("F1 Score", fontsize=20)
-        ax.set_xticks(range(num_classes))
+        ax.set_xticks(range(self.num_labels))
         ax.set_xticklabels(sorted_class_labels, rotation=90, ha='right', fontsize=18)
         ax.set_title(f"F1 Score per author ('{stage}')", fontsize=25)
         ax.set_ylim(0, 1.0)
@@ -229,11 +228,11 @@ class ClassificationModule(LightningModule):
         ######################
         ## Confusion matrix
         ######################
-        conf_matrix = multiclass_confusion_matrix(predictions, labels, num_classes=num_classes, ignore_index=ignore_index)
+        conf_matrix = multiclass_confusion_matrix(predictions, labels, num_classes=self.num_labels, ignore_index=ignore_index)
         conf_matrix = conf_matrix.cpu().detach().numpy()
 
-        logger.debug(f"MultiheadedClassifier.compute_metrics() -- Confusion matrix: {conf_matrix}")
-        logger.debug(f"MultiheadedClassifier.compute_metrics() -- Creating a plot...")
+        logger.debug(f"ClassificationModule.compute_metrics() -- Confusion matrix: {conf_matrix}")
+        logger.debug(f"ClassificationModule.compute_metrics() -- Creating a plot...")
 
         # plot confusion matrix
         plt.figure(figsize=(25, 25))
@@ -251,7 +250,7 @@ class ClassificationModule(LightningModule):
         if save_dir is None:
             save_dir = self.trainer.default_root_dir
         logger.debug(
-            f"MultiheadedClassifier.compute_metrics() -- Saving the plot to {save_dir}")
+            f"ClassificationModule.compute_metrics() -- Saving the plot to {save_dir}")
         img_path = os.path.join(save_dir, f"confusion_matrix_{stage}_epoch_{self.current_epoch}.png")
         plt.savefig(img_path)
         plt.close()

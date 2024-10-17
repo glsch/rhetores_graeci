@@ -290,8 +290,8 @@ class AncientGreekDataModule(LightningDataModule):
                 unk = max_label + 1
                 self.dataset = self.dataset.assign(label=encoded_labels)
                 unk_df = unk_df.assign(target="<UNK>")
-                unk_df = unk_df.assign(label=unk)
-                predict_df = predict_df.assign(label=unk + 1)
+                unk_df = unk_df.assign(label=-100)
+                predict_df = predict_df.assign(label=-100)
                 self.dataset = pd.concat([self.dataset, unk_df, predict_df])
 
                 logger.info(f"AncientGreekDataModule.prepare_data() -- Number of authors full dataset: {self.dataset['author_id'].unique().tolist()}")
@@ -337,6 +337,7 @@ class AncientGreekDataModule(LightningDataModule):
         elif self.task == "classification":
             # getting labels
             self._id2label = self.dataset[self.dataset["split"] != "predict"][["label", "target"]].drop_duplicates().set_index("label")["target"].to_dict()
+            del self._id2label[-100]
             self._label2id = {l: i for i, l in self.id2label.items()}
             self._num_labels = len(self.id2label)
             dataset_cls = ClassificationDataset
