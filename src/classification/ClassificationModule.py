@@ -22,10 +22,8 @@ from torch.nn import CrossEntropyLoss
 
 import numpy as np
 
-
 from src.logger_config import logger
 
-# todo: confusion matrix for each epoch
 # todo: attribution of the AR chapters
 # todo: stats for logical divisions of the AR
 
