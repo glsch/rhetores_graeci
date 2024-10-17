@@ -35,7 +35,7 @@ class TextChunkType(enum.Enum):
 
 class AncientGreekDataModule(LightningDataModule):
     def __init__(self,
-                 model_class: torch.nn.Module = AutoModelForMaskedLM,
+                 model_class: Type[torch.nn.Module] = AutoModelForMaskedLM,
                  base_transformer: str = "bowphs/GreBerta",
                  epithets: List[str]=None,
                  chunk_type: TextChunkType = TextChunkType.CHUNK,

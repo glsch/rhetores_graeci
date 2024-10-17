@@ -69,7 +69,7 @@ trainer:
       repo_owner: glsch
       token: null
       private: false
-      suffix: _classifier
+      suffix: _rhetores
   - class_path: lightning.pytorch.callbacks.EarlyStopping
     init_args:
       monitor: val/loss
@@ -118,10 +118,6 @@ trainer:
 model:
   class_path: src.classification.ClassificationModule.ClassificationModule
   init_args:
-    model:
-      class_path: src.classification.ClassificationModule.AutoModelForSequenceClassificationWrapper
-      init_args:
-        pretrained_model_name_or_path: bowphs/GreBerta
     optimizer:
       class_path: torch.optim.AdamW
       init_args:
@@ -139,8 +135,11 @@ model:
         fused: null
     scheduler_type: LINEAR
     num_warmup_steps: 0
+    push_to_hub: false
     confidence_threshold: 0.8
 data:
+  model_class: transformers.AutoModelForSequenceClassification
+  base_transformer: bowphs/GreBerta
   epithets:
   - Rhet.
   - Orat.

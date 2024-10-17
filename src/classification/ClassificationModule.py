@@ -1,15 +1,15 @@
 import enum
 import os
-from typing import Union, List
+from typing import Union, List, Dict, Type
 
 from jsonargparse.typing import NonNegativeInt, NonNegativeFloat,ClosedUnitInterval, restricted_number_type, PositiveInt
 from jsonargparse import lazy_instance
 from lightning.pytorch import LightningModule
 from lightning.pytorch.cli import OptimizerCallable
 import torch
-from transformers import SchedulerType, get_scheduler, AutoModelForSequenceClassification, AutoTokenizer
+from transformers import SchedulerType, get_scheduler, AutoModelForSequenceClassification, AutoTokenizer, PreTrainedTokenizer, PreTrainedTokenizerFast
 from transformers.modeling_outputs import SequenceClassifierOutput
-from transformers import RobertaForSequenceClassification
+
 
 from src.logger_config import logger
 
@@ -43,8 +43,12 @@ class AutoModelForSequenceClassificationWrapper(torch.nn.Module):
 class ClassificationModule(LightningModule):
     def __init__(
             self,
-            num_classes: NonNegativeInt=None,
-            model: torch.nn.Module = lazy_instance(AutoModelForSequenceClassificationWrapper, pretrained_model_name_or_path="bowphs/GreBerta"),
+            task: str = "classification",
+            base_transformer: str = "bowphs/GreBerta",
+            model_class: Type[torch.nn.Module] = AutoModelForSequenceClassification,
+            tokenizer: Union[PreTrainedTokenizer, PreTrainedTokenizerFast] = None,
+            num_labels: NonNegativeInt = None,
+            id2label: Dict[int, str] = None,
             optimizer: OptimizerCallable = lambda p: torch.optim.AdamW(p),
             scheduler_type: SchedulerType = SchedulerType.LINEAR,
             num_warmup_steps: NonNegativeInt = 0,
@@ -52,32 +56,28 @@ class ClassificationModule(LightningModule):
             confidence_threshold: NonNegativeFloat = 0.8,
     ):
         super().__init__()
+        self.task = task
+        self.tokenizer = tokenizer
+        self.model_class = model_class
+        self.num_labels = num_labels
+        self.id2label = id2label
 
-        self.model = model
         self.push_to_hub = push_to_hub
-
-        self.num_classes = num_classes
-
-        self.tokenizer = self.model.tokenizer
 
         self.optimizer_callable = optimizer
         self.lr_scheduler_type = scheduler_type
         self.num_warmup_steps = num_warmup_steps
         self.confidence_threshold = confidence_threshold
 
+        self.model = self.model_class(pretrained_model_name_or_path=base_transformer, num_labels=self.num_labels, id2label=self.id2label)
+
         self.save_hyperparameters()
 
         self.epoch_outputs = {"train": [], "val": [], "test": []}
         self.epoch_labels = {"train": [], "val": [], "test": []}
 
-    def on_fit_start(self) -> None:
-        logger.info(f"ClassificationModule.on_train_start() -- Number of classes: {self.num_classes}")
-        self.model.model.num_labels = self.num_classes
-        self.model.model.config.num_labels = self.num_classes
-        self.model.model.config.id2label = self.trainer.datamodule.id2label
-
     def forward(self, batch):
-        return self.model.forward(batch)
+        return self.model.forward(**batch)
 
     def training_step(self, batch, batch_idx):
         outputs = self._process_batch(batch, stage="train")
