@@ -292,10 +292,10 @@ class ClassificationModule(LightningModule):
             # Get logits for this sigla
             start_idx = cumsum_counts[i]
             end_idx = start_idx + counts[i]
-            probabilities = probabilities[start_idx:end_idx]
+            sigla_probs = probabilities[start_idx:end_idx]
 
             # Get top-5 predictions
-            top5_logits, top5_indices = torch.topk(probabilities, k=5, dim=1)
+            top5_logits, top5_indices = torch.topk(sigla_probs, k=5, dim=1)
 
             # Calculate average of top-5 predictions
             avg_top5 = top5_logits.mean(dim=0)
