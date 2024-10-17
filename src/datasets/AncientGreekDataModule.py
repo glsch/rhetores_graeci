@@ -350,7 +350,7 @@ class AncientGreekDataModule(LightningDataModule):
             batch_size=self.batch_size,
             collate_fn=self.collate_fn,
             sampler=sampler,
-            shuffle=True,
+            shuffle=True if sampler is None else False,
             num_workers=self.num_workers,
             persistent_workers=self.persistent_workers
         )
