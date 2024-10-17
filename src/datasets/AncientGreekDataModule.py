@@ -329,6 +329,7 @@ class AncientGreekDataModule(LightningDataModule):
         if stage == "fit":
             self.train_dataset = dataset_cls(df=self.train_df, split="train", tokenizer=self.tokenizer)
             self.val_dataset = dataset_cls(df=self.val_df, split="val", tokenizer=self.tokenizer)
+            self.test_dataset = dataset_cls(df=self.test_df, split="test", tokenizer=self.tokenizer)
 
         elif stage == "test":
             self.val_dataset = dataset_cls(df=self.val_df, split="val", tokenizer=self.tokenizer)
