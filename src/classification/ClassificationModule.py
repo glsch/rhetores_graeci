@@ -152,7 +152,7 @@ class ClassificationModule(LightningModule):
 
         logger.debug(f"ClassificationModule.compute_metrics() -- Saving the plot to {save_dir}")
 
-        all_logits = torch.cat(self.epoch_logits[stage], dim=0)
+        all_logits = torch.cat(self.epoch_outputs[stage], dim=0)
         all_labels = torch.cat(self.epoch_labels[stage], dim=0)
         logger.info(f"Documents processed: {all_logits.shape[0]}")
 
