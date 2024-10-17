@@ -53,8 +53,9 @@ class AncientGreekDataModule(LightningDataModule):
         self.base_transformer = base_transformer
         self.model_class = model_class()
 
+
         self.fname = "preprocessed_dataset"
-        logger.info(f"AncientGreekDataModule.__init__() -- Model class: {self.model_class}, Type: {Type[self.model_class]}")
+        logger.info(f"AncientGreekDataModule.__init__() -- Model class: {self.model_class}, {type(self.model_class)} Type: {Type[self.model_class]}")
         logger.info(f"AncientGreekDataModule.__init__() -- Target model class: {Type[AutoModelForMaskedLM]}")
         if self.model_class == AutoModelForMaskedLM:
             self.task = "mlm"
