@@ -29,6 +29,7 @@ from src.datasets.MlmDataset import MLMDataset
 from src.datasets.ClassificationDataset import ClassificationDataset
 from src.logger_config import logger
 from pytorch_metric_learning.samplers import MPerClassSampler
+from dataclasses import dataclass
 
 class TextChunkType(enum.Enum):
     SENTENCE = "sentence"
@@ -40,6 +41,21 @@ def resolve_forward_ref(ref: Union[str, ForwardRef, Type]):
     if isinstance(ref, ForwardRef):
         return ref._evaluate(globals(), locals(), set())
     return ref
+
+
+@dataclass
+class CustomDataCollatorWithPadding(DataCollatorWithPadding):
+    siglum: str = None
+
+    def __call__(self, features):
+        # Call the parent class to handle the default collation
+        batch = super().__call__(features)
+
+        # Handle the additional key
+        if self.siglum in features[0]:
+            batch[self.siglum] = [f[self.siglum] for f in features]
+
+        return batch
 
 
 class AncientGreekDataModule(LightningDataModule):
@@ -431,7 +447,7 @@ class AncientGreekDataModule(LightningDataModule):
         loader = DataLoader(
             self.test_dataset,
             batch_size=1,
-            # collate_fn=self.collate_fn,
+            collate_fn=self.collate_fn,
             sampler=sampler,
             shuffle=False,
             num_workers=self.num_workers,

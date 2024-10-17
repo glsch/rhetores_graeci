@@ -54,6 +54,8 @@ class ClassificationDataset(Dataset):
 
         tokenized["label"] = self.records[idx]["label"]
 
+        print(tokenized)
+
         return tokenized
 
 if __name__ == "__main__":
