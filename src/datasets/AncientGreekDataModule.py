@@ -247,8 +247,6 @@ class AncientGreekDataModule(LightningDataModule):
                 self.dataset = pd.concat([train_df, val_df, test_df, unk_df, predict_df])
 
             self.dataset.to_csv(os.path.join(PathManager.data_path, "preprocessed", f"{self.fname}.csv"), index=False)
-
-
         else:
             self.dataset = pd.read_csv(os.path.join(PathManager.data_path, "preprocessed", f"{self.fname}.csv"))
 
