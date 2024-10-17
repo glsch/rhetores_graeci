@@ -48,31 +48,32 @@ class PushToHuggingfaceCallback(Callback):
         if path is None:
             path = trainer.default_root_dir
 
-        logger.info(f"PushToHuggingfaceCallback() -- Saving model to {path}")
+        #logger.info(f"PushToHuggingfaceCallback() -- Saving model to {path}")
 
         # saving the model and the corresponding tokenizer as huggingface models and tokenizer
         pl_module.model.tokenizer.save_pretrained(path)
         pl_module.model.model.save_pretrained(path)
 
-        # push the model to the hub
-        # pl_module.model.model.push_to_hub(
-        #     repo_id=self.repo_id,
-        #     commit_message=f"Upload model after epoch {epoch}",
-        #     use_auth_token=self.token
-        # )
 
-        logger.info(f"PushToHuggingfaceCallback() -- Saving model to {path}")
+        logger.info(f"PushToHuggingfaceCallback() -- Saved model and toeknizer to {path}")
 
-        self.api.upload_folder(
-            commit_message=f"Pushing after epoch {epoch}",
-            folder_path=path,
-            repo_id=self.repo_id,
-            repo_type="model",
-            token=self.token,
-            # ignore_patterns=[".gitattributes", ".gitignore", "**/checkpoints/**", "logs/**", "**/wandb/**"],
-            # delete_patterns=[".gitattributes", ".gitignore", "**/checkpoints/**", "logs/**", "**/wandb/**"]
-        )
+        if pl_module.push_to_hub:
+            self.api.upload_folder(
+                commit_message=f"Pushing after epoch {epoch}",
+                folder_path=path,
+                repo_id=self.repo_id,
+                repo_type="model",
+                token=self.token,
+                # ignore_patterns=[".gitattributes", ".gitignore", "**/checkpoints/**", "logs/**", "**/wandb/**"],
+                # delete_patterns=[".gitattributes", ".gitignore", "**/checkpoints/**", "logs/**", "**/wandb/**"]
+            )
 
+            # push the model to the hub
+            # pl_module.model.model.push_to_hub(
+            #     repo_id=self.repo_id,
+            #     commit_message=f"Upload model after epoch {epoch}",
+            #     use_auth_token=self.token
+            # )
         logger.info(f"Model uploaded to {self.repo_id} after epoch {epoch}")
 
     def on_exception(self, trainer, pl_module, exception):
