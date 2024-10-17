@@ -44,6 +44,8 @@ class ClassificationDataset(Dataset):
             max_length=512,
             truncation=True,
             padding="max_length",
+            return_attention_mask=True,
+            return_token_type_ids=True
         )
         tokenized["label"] = self.records[idx]["label"]
 
