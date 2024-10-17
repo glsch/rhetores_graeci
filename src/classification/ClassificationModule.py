@@ -317,10 +317,11 @@ class ClassificationModule(LightningModule):
                 'top5_label': top5_labels[4],
             }
             results.append(result)
-        # Convert results to DataFrame
+
         df = pd.DataFrame(results)
 
-        print(df)
+        for i, r in enumerate(df.iterrows()):
+            print(r)
 
         return df
 
