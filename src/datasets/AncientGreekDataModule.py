@@ -77,9 +77,9 @@ class AncientGreekDataModule(LightningDataModule):
                 row_dict[f'l{i}_name'] = name
             return row_dict
 
-        if not os.path.exists(os.path.join(PathManager.data_path, "preprocessed", "preprocessed_dataset.csv")):
-            if not (os.path.exists(self.dataset_path) and os.path.exists(self.author_metadata_path)):
-                download_dataset()
+        #if not os.path.exists(os.path.join(PathManager.data_path, "preprocessed", "preprocessed_dataset.csv")):
+        if not (os.path.exists(self.dataset_path) and os.path.exists(self.author_metadata_path)):
+            download_dataset()
 
         if not os.path.exists(os.path.join(PathManager.data_path, "preprocessed", "preprocessed_dataset.csv")):
             # opening dataset and metadata
@@ -127,7 +127,7 @@ class AncientGreekDataModule(LightningDataModule):
                             data=[{"text": " ".join(chapter_df["text"].tolist()), "author_id": author_id, "work_id": work_id, "siglum": f"{author_label}_AR_{chapter}", 'target': author_label}])
 
                         grouped_dfs.append(chapter_df)
-                #
+
                 elif author_id in (592, 2586, 284, 2027, 87):
                     for w, (work_id, work_df) in enumerate(df.groupby("work_id")):
                         # for the future verification task
@@ -188,16 +188,29 @@ class AncientGreekDataModule(LightningDataModule):
 
             self.dataset.rename(columns={"chunks": "text"}, inplace=True)
 
-            self.dataset.to_csv(os.path.join(PathManager.data_path, "preprocessed", "preprocessed_dataset.csv"), index=False)
+            self.dataset.to_csv(os.path.join(PathManager.data_path, "preprocessed", f"preprocessed_dataset.csv"), index=False)
 
         else:
-            self.dataset = pd.read_csv(os.path.join(PathManager.data_path, "preprocessed", "preprocessed_dataset.csv"))
+            self.dataset = pd.read_csv(os.path.join(PathManager.data_path, "preprocessed", f"preprocessed_dataset.csv"))
 
 
     def setup(self, stage: str) -> None:
+        self.fname = "preprocessed_dataset"
+        self.task = None
+        if isinstance(self.trainer.model.model, AutoModelForMaskedLMWrapper):
+            self.fname = "mlm_" + self.fname
+            self.task = "mlm"
+        elif isinstance(self.trainer.model.model, AutoModelForSequenceClassificationWrapper):
+            self.fname = "classification_" + self.fname
+            self.task = "classification"
+        else:
+            raise ValueError("Invalid model")
+
+        assert self.task is not None, "Task must be set"
+
         dataset_cls = None
         self.collate_fn = None
-        self.dataset = pd.read_csv(os.path.join(PathManager.data_path, "preprocessed", "preprocessed_dataset.csv"))
+        self.dataset = pd.read_csv(os.path.join(PathManager.data_path, "preprocessed", f"{self.fname}.csv"))
 
         self.train_df = self.dataset[self.dataset["split"] == "train"]
         self.val_df = self.dataset[self.dataset["split"] == "val"]
