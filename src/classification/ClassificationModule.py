@@ -47,7 +47,7 @@ class ClassificationModule(LightningModule):
         self.num_warmup_steps = num_warmup_steps
         self.confidence_threshold = confidence_threshold
 
-        self.model = self.model_class(pretrained_model_name_or_path=base_transformer, num_labels=self.num_labels, id2label=self.id2label)
+        self.model = self.model_class.from_pretrained(pretrained_model_name_or_path=base_transformer, num_labels=self.num_labels, id2label=self.id2label)
 
         self.save_hyperparameters()
 
