@@ -28,10 +28,10 @@ class ClassificationDataset(Dataset):
         self.tokenizer = tokenizer
         self.split = split
 
-        self.df["label"], unique = pd.factorize(self.df["target"])
+        # self.df["label"], unique = pd.factorize(self.df["target"])
 
-        self.id2label = {i: l for i, l in enumerate(unique)}
-        self.label2id = {l: i for i, l in self.id2label.items()}
+        #self.id2label = {i: l for i, l in enumerate(unique)}
+        #self.label2id = {l: i for i, l in self.id2label.items()}
 
         self.records = self.df.to_dict(orient="records")
 
