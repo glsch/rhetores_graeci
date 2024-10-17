@@ -157,7 +157,7 @@ class ClassificationModule(LightningModule):
         logger.debug(f"Temperature-bias: {self.temperature[1]}")
 
         MulticlassCalibrationError.plot = _ce_plot
-        ce = MulticlassCalibrationError(num_classes=self.num_heads, n_bins=15, ignore_index=-100)
+        ce = MulticlassCalibrationError(num_classes=self.num_labels, n_bins=15, ignore_index=-100)
         ce.update(torch.softmax(all_logits, dim=1), all_labels)
         self.log("test/mce_bc", ce.compute(), logger=True, on_step=False, on_epoch=True)
         logger.info(f"Calibration error (before calibration): {ce.compute()}")
