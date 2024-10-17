@@ -30,7 +30,7 @@ class ClassificationModule(LightningModule):
             self,
             task: str,
             base_transformer: str,
-            model_class: Type[AutoModelForSequenceClassification] = transformers.models.auto.AutoModelForSequenceClassification,
+            model_class: Type[AutoModelForSequenceClassification],# = transformers.models.auto.AutoModelForSequenceClassification,
             tokenizer: Union[PreTrainedTokenizer, PreTrainedTokenizerFast] = None,
             num_labels: NonNegativeInt = None,
             id2label: Dict[int, str] = None,

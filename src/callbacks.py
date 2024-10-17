@@ -24,8 +24,11 @@ class PushToHuggingfaceCallback(Callback):
 
     def on_save_checkpoint(self, trainer, pl_module, checkpoint):
         if self.repo_id is None or self.repo_name is None:
+            transformer_name = pl_module.base_transformer
+            if transformer_name.startswith(f"{self.repo_owner}/"):
+                transformer_name = transformer_name.replace(f"{self.repo_owner}/", "")
 
-            self.repo_name = pl_module.base_transformer.replace("/", "_").replace(f"{self.repo_owner}_", "")
+            self.repo_name = transformer_name.replace("/", "_")
             self.repo_name_id = f"{self.repo_owner}/{self.repo_name}" if self.repo_owner else self.repo_name
             self.repo_name_id = self.repo_name_id + self.suffix
 
