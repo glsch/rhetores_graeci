@@ -101,6 +101,8 @@ class AncientGreekDataModule(LightningDataModule):
         self._id2label = None
         self._label2id = None
 
+        self.save_hyperparameters()
+
     @property
     def num_labels(self):
         if self._num_labels is None:
