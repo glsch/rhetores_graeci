@@ -275,7 +275,7 @@ class AncientGreekDataModule(LightningDataModule):
         else:
             self.dataset = pd.read_csv(os.path.join(PathManager.data_path, "preprocessed", f"{self.fname}.csv"))
 
-        self.id2label = self.dataset[self.dataset["split"].isin(["train", "val"])][["label", "target"]].drop_duplicates().set_index("label")["target"].to_dict()
+        self.id2label = self.dataset[self.dataset["split"] != "predict"][["label", "target"]].drop_duplicates().set_index("label")["target"].to_dict()
 
     def setup(self, stage: str, model: torch.nn.Module = None) -> None:
         logger.info(
@@ -298,7 +298,6 @@ class AncientGreekDataModule(LightningDataModule):
         self.test_df = self.dataset[self.dataset["split"] == "test"]
 
         self.sampler = None
-
         if isinstance(model, AutoModelForMaskedLMWrapper):
             logger.info(f"AncientGreekDataModule.setup() -- Model is subclass of {AutoModelForMaskedLMWrapper}: {self.trainer.model.model.__class__.__name__}")
             dataset_cls = MLMDataset
