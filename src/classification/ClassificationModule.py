@@ -225,7 +225,7 @@ class ClassificationModule(LightningModule):
         self.trainer.logger.log_image(f"top_label_confidence_vector_ac", images=[img_path])
 
     def forward(self, batch):
-        return self.model.forward(**batch)
+        return self.model.forward(**batch.to(self.device))
 
     def training_step(self, batch, batch_idx):
         outputs = self._process_batch(batch, stage="train")
