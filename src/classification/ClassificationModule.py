@@ -9,6 +9,7 @@ from lightning.pytorch.cli import OptimizerCallable
 import torch
 from transformers import SchedulerType, get_scheduler, AutoModelForSequenceClassification, AutoTokenizer, PreTrainedTokenizer, PreTrainedTokenizerFast
 from transformers.modeling_outputs import SequenceClassifierOutput
+import transformers
 
 
 from src.logger_config import logger
@@ -22,7 +23,7 @@ class ClassificationModule(LightningModule):
             self,
             task: str = "classification",
             base_transformer: str = "bowphs/GreBerta",
-            model_class: Type[torch.nn.Module] = AutoModelForSequenceClassification,
+            model_class: Type[AutoModelForSequenceClassification] = transformers.models.auto.AutoModelForSequenceClassification,
             tokenizer: Union[PreTrainedTokenizer, PreTrainedTokenizerFast] = None,
             num_labels: NonNegativeInt = None,
             id2label: Dict[int, str] = None,
