@@ -316,9 +316,9 @@ class AncientGreekDataModule(LightningDataModule):
 
             m = (self.batch_size // self._num_classes) + 1
             self.sampler = [
-                MPerClassSampler(self.train_df["label"], m=m),
-                MPerClassSampler(self.val_df["label"], m=m),
-                MPerClassSampler(self.test_df["label"], m=m),
+                MPerClassSampler(self.train_df["label"].tolist(), m=m),
+                MPerClassSampler(self.val_df["label"].tolist(), m=m),
+                MPerClassSampler(self.test_df["label"].tolist(), m=m),
             ]
 
 
