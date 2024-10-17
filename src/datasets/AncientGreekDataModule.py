@@ -4,6 +4,7 @@ import os.path
 from typing import List, Union, Type
 from typing import ForwardRef
 
+
 from tqdm import tqdm
 tqdm.pandas()
 
@@ -33,6 +34,13 @@ class TextChunkType(enum.Enum):
     SENTENCE = "sentence"
     CHUNK = "chunk"
 
+def resolve_forward_ref(ref: Union[str, ForwardRef, Type]):
+    if isinstance(ref, str):
+        ref = ForwardRef(ref)
+    if isinstance(ref, ForwardRef):
+        return ref._evaluate(globals(), locals(), set())
+    return ref
+
 
 class AncientGreekDataModule(LightningDataModule):
     def __init__(self,
@@ -51,7 +59,7 @@ class AncientGreekDataModule(LightningDataModule):
         self.dataset_path = PathManager.dataset_path
         self.author_metadata_path = PathManager.author_metadata_path
         self.base_transformer = base_transformer
-        self.model_class = model_class()
+        self.model_class = resolve_forward_ref(model_class)
 
 
         self.fname = "preprocessed_dataset"

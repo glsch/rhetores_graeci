@@ -138,7 +138,7 @@ model:
     push_to_hub: false
     confidence_threshold: 0.8
 data:
-  model_class: transformers.AutoModelForSequenceClassification
+  model_class: transformers.AutoModelForMaskedLM
   base_transformer: bowphs/GreBerta
   epithets:
   - Rhet.
@@ -147,6 +147,6 @@ data:
   batch_size: 1
   num_workers: 0
   persistent_workers: false
-  chunk_length: 256
+  chunk_length: 128
   overlap: 0.5
 ckpt_path: null
