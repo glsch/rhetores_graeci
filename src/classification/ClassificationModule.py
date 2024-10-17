@@ -116,14 +116,14 @@ class ClassificationModule(LightningModule):
         }
 
     def _process_batch(self, batch, stage="train") -> SequenceClassifierOutput:
-        assert self.num_classes is not None, "Number of classes must be set before processing a batch"
+        assert self.num_labels is not None, "Number of classes must be set before processing a batch"
         logger.info(f"ClassificationModule._process_batch() -- Processing batch for stage: {stage}")
         logger.info(f"ClassificationModule._process_batch() -- Batch: {batch}")
         logger.info(f"ClassificationModule._process_batch() -- Batch input_ids: {batch['input_ids'].shape}")
         logger.info(f"ClassificationModule._process_batch() -- Batch labels: {batch['labels'].shape}")
         logger.info(f"ClassificationModule._process_batch() -- Batch labels: {batch['labels']}")
-        logger.info(f"ClassificationModule._process_batch() -- Num classes: {self.num_classes}")
-        logger.info(f"ClassificationModule._process_batch() -- Num classes in the model: {self.model.model.config.num_labels}")
+        logger.info(f"ClassificationModule._process_batch() -- Num classes: {self.num_labels}")
+
 
         classifier_output = self.forward(batch)
         self.log(f"{stage}/loss", classifier_output.loss, on_step=False, on_epoch=True, prog_bar=True, logger=True)
@@ -144,7 +144,7 @@ class ClassificationModule(LightningModule):
 
         reject_label = -100
         if stage in ("test"):
-            reject_label = self.num_classes
+            reject_label = self.num_labels
 
         logger.debug(
             f"ClassificationModule.make_predictions() -- Reject label: {reject_label} (stage: {stage})")
