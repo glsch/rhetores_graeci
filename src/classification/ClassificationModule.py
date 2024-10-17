@@ -272,10 +272,12 @@ class ClassificationModule(LightningModule):
         all_logits = torch.cat(self.epoch_outputs[stage], dim=0).cpu().detach()
         all_sigla = torch.cat(self.sigla, dim=0).cpu().detach()
 
+
         # Sort sigla and logits
         sorted_sigla, indices = torch.sort(all_sigla, dim=0)
         sorted_logits = all_logits[indices]
 
+        probabilities = torch.nn.functional.softmax(sorted_logits, dim=1)
         # Get unique sigla values and their counts
         unique_sigla, counts = torch.unique(sorted_sigla, return_counts=True)
 
@@ -290,10 +292,10 @@ class ClassificationModule(LightningModule):
             # Get logits for this sigla
             start_idx = cumsum_counts[i]
             end_idx = start_idx + counts[i]
-            sigla_logits = sorted_logits[start_idx:end_idx]
+            probabilities = probabilities[start_idx:end_idx]
 
             # Get top-5 predictions
-            top5_logits, top5_indices = torch.topk(sigla_logits, k=5, dim=1)
+            top5_logits, top5_indices = torch.topk(probabilities, k=5, dim=1)
 
             # Calculate average of top-5 predictions
             avg_top5 = top5_logits.mean(dim=0)
