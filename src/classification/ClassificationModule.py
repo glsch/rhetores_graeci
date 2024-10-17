@@ -293,10 +293,12 @@ class ClassificationModule(LightningModule):
 
         #df_final = df_final.assign(author_name=df_final['class'].apply(lambda x: self.id2label[x]))
 
+        results = pd.DataFrame()
         for chapter in df_final["siglum"].unique().tolist():
-            print(f"Chapter {chapter}")
             top5 = df_final[df_final["siglum"] == chapter].melt(id_vars=["siglum"], var_name="class", value_name="probability").sort_values(by="probability", ascending=False).head(5)
-            print(top5)
+            results = pd.concat([results, top5])
+
+        results.to_csv(os.path.join(save_dir, f"chapter_predictions_{self.base_transformer.replace('/', '_')}.csv"), index=False)
 
         return df_final
 
