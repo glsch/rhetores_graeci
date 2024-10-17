@@ -124,9 +124,8 @@ class ClassificationModule(LightningModule):
 
         with torch.inference_mode(False):
             self.train(mode=True)
-            self.temp_w.requires_grad = True
-            self.temp_b.requires_grad = True
-            self.vector_calibration(calibration_dataloader)
+            self.temperature[0].requires_grad = True
+            self.temperature_calibration(calibration_dataloader)
             
     def temperature_calibration(self, calibration_dataloader):
         """
