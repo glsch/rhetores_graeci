@@ -77,7 +77,7 @@ trainer:
       repo_owner: glsch
       token: null
       private: false
-      suffix: _rhetores
+      suffix: _classifier
   - class_path: lightning.pytorch.callbacks.EarlyStopping
     init_args:
       monitor: val/loss
