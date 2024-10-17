@@ -68,7 +68,7 @@ class ClassificationModule(LightningModule):
         self.epoch_labels = {"train": [], "val": [], "test": []}
 
     def on_train_start(self) -> None:
-        logger.info(f"ClassificationModule -- Number of classes: {self.num_classes}")
+        logger.info(f"ClassificationModule.on_train_start() -- Number of classes: {self.num_classes}")
         try:
             self.model.config.num_labels = self.trainer.datamodule._num_classes
         except:

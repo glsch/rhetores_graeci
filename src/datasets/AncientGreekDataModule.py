@@ -93,6 +93,8 @@ class AncientGreekDataModule(LightningDataModule):
     #     return self._num_classes
 
     def prepare_data(self) -> None:
+        logger.info(
+            f"AncientGreekDataModule.prepare_data()")
         #if self.prepared:
         #    return
 
@@ -275,6 +277,8 @@ class AncientGreekDataModule(LightningDataModule):
         self.id2label = self.dataset[self.dataset["split"].isin(["train", "val"])][["label", "target"]].drop_duplicates().set_index("label")["target"].to_dict()
 
     def setup(self, stage: str, model: torch.nn.Module = None) -> None:
+        logger.info(
+            f"AncientGreekDataModule.setup()")
         dataset_cls = None
         self.collate_fn = None
 
