@@ -148,7 +148,7 @@ class ClassificationModule(LightningModule):
             for batch in tqdm(calibration_dataloader, disable=False):
                 model_outputs = self(batch)
                 logits_list.append(model_outputs.logits)
-                labels_list.append(batch.target)
+                labels_list.append(batch.labels)
 
         all_logits = torch.cat(logits_list).detach().to(self.device)
         all_labels = torch.cat(labels_list).detach().to(self.device)
@@ -200,7 +200,7 @@ class ClassificationModule(LightningModule):
             for batch in tqdm(calibration_dataloader, disable=False):
                 model_outputs = self(batch)
                 logits_list.append(model_outputs.logits)
-                labels_list.append(batch.target)
+                labels_list.append(batch.labels)
 
         all_logits = torch.cat(logits_list).detach().to(self.device)
         all_labels = torch.cat(labels_list).detach().to(self.device)
