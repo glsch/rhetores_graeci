@@ -184,10 +184,10 @@ class ClassificationModule(LightningModule):
         # todo: consider using metric collection
         # however, functional interface is more tolerant to the dynamic number of classes, as in our case
         logger.debug(f"ClassificationModule.compute_metrics() -- Computing accuracy metrics...")
-        f1 = multiclass_f1_score(predictions, labels, num_classes=self.num_labels, ignore_index=ignore_index)
-        accuracy = multiclass_accuracy(predictions, labels, num_classes=self.num_labels, ignore_index=ignore_index)
-        precision = multiclass_precision(predictions, labels, num_classes=self.num_labels, ignore_index=ignore_index)
-        recall = multiclass_recall(predictions, labels, num_classes=self.num_labels, ignore_index=ignore_index)
+        f1 = multiclass_f1_score(predictions, labels, num_classes=len(class_labels), ignore_index=ignore_index)
+        accuracy = multiclass_accuracy(predictions, labels, num_classes=len(class_labels), ignore_index=ignore_index)
+        precision = multiclass_precision(predictions, labels, num_classes=len(class_labels), ignore_index=ignore_index)
+        recall = multiclass_recall(predictions, labels, num_classes=len(class_labels), ignore_index=ignore_index)
         logger.debug(f"ClassificationModule.compute_metrics() -- Accuracy metrics: F1 {f1}, accuracy {accuracy}, precision {precision}, recall {recall}")
 
         ##########################
@@ -195,7 +195,7 @@ class ClassificationModule(LightningModule):
         #########################
 
         # todo: consider adding others, too
-        mcls_f1 = MulticlassF1Score(num_classes=self.num_labels, ignore_index=ignore_index, average=None)
+        mcls_f1 = MulticlassF1Score(num_classes=len(class_labels), ignore_index=ignore_index, average=None)
         mcls_f1.update(predictions, labels)
 
         # plot F1 per class barchart
@@ -215,7 +215,7 @@ class ClassificationModule(LightningModule):
                         ha='center', va='bottom', fontsize=12)
         ax.set_xlabel("Classes", fontsize=20)
         ax.set_ylabel("F1 Score", fontsize=20)
-        ax.set_xticks(range(self.num_labels))
+        ax.set_xticks(range(len(class_labels)))
         ax.set_xticklabels(sorted_class_labels, rotation=90, ha='right', fontsize=18)
         ax.set_title(f"F1 Score per author ('{stage}')", fontsize=25)
         ax.set_ylim(0, 1.0)
@@ -229,7 +229,7 @@ class ClassificationModule(LightningModule):
         ######################
         ## Confusion matrix
         ######################
-        conf_matrix = multiclass_confusion_matrix(predictions, labels, num_classes=self.num_labels, ignore_index=ignore_index)
+        conf_matrix = multiclass_confusion_matrix(predictions, labels, num_classes=len(class_labels), ignore_index=ignore_index)
         conf_matrix = conf_matrix.cpu().detach().numpy()
 
         logger.debug(f"ClassificationModule.compute_metrics() -- Confusion matrix: {conf_matrix}")
