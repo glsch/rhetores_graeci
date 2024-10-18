@@ -83,6 +83,10 @@ def _ce_plot(self, ax: _AX_TYPE | None = None) -> _PLOT_OUT_TYPE:
         fig.tight_layout()
     return fig, ax
 
+class RejectionMethod(enum.Enum):
+    DIFFERENCE = "sentence"
+    THRESHOLD = "chunk"
+
 class ClassificationModule(LightningModule):
     def __init__(
             self,
@@ -96,9 +100,10 @@ class ClassificationModule(LightningModule):
             scheduler_type: SchedulerType = SchedulerType.LINEAR,
             num_warmup_steps: NonNegativeInt = 0,
             push_to_hub: bool = False,
+            rejection_method: RejectionMethod = RejectionMethod.DIFFERENCE,
             init_w: float = 1.0,
             init_b: float = 0.0,
-            confidence_threshold: NonNegativeFloat = 0.8,
+            confidence_threshold: NonNegativeFloat = 0.25,
     ):
         super().__init__()
         self.task = task
@@ -106,6 +111,7 @@ class ClassificationModule(LightningModule):
         self.model_class = model_class
         self.num_labels = num_labels
         self.id2label = id2label
+        self.rejection_method = rejection_method
 
         self.push_to_hub = push_to_hub
 
@@ -657,7 +663,9 @@ class ClassificationModule(LightningModule):
         # (consistently with PAN 2019 and our own baselines)
         rejection_threshold = confidence_threshold
         method = "pt"
-        if method == "pt":
+        if self.rejection_method == RejectionMethod.THRESHOLD:
+            if self.confidence_threshold < 0.5:
+                logger.warning(f"ClassificationModule.make_predictions() -- Confidence threshold is less than 0.5: {self.confidence_threshold}")
             logger.debug(f"ClassificationModule.make_predictions() -- Applying threshold: {rejection_threshold}")
             top_probs, top_indices = torch.max(probabilities, dim=1)
 
@@ -675,8 +683,7 @@ class ClassificationModule(LightningModule):
             #    logger.info(f"Document {i} -- Prediction: {predictions[i]}")
             #    logger.info(f"Prob {i} -- Prediction: {top_probs[i]}")
 
-
-        elif method == "difference":
+        elif self.rejection_method == RejectionMethod.DIFFERENCE:
             logger.debug(f"ClassificationModule.make_predictions() -- Applying threshold: {rejection_threshold}")
             top2_probs, top2_indices = torch.topk(probabilities, 2, dim=1)
             diff = top2_probs[:, 0] - top2_probs[:, 1]

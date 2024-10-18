@@ -134,11 +134,12 @@ model:
         differentiable: false
         fused: null
     scheduler_type: LINEAR
+    rejection_method: DIFFERENCE
     num_warmup_steps: 0
     push_to_hub: false
     init_w: 1.0
     init_b: 1.0
-    confidence_threshold: 0.8
+    confidence_threshold: 0.25
 data:
   model_class: transformers.AutoModelForSequenceClassification
   base_transformer: bowphs/GreBerta
