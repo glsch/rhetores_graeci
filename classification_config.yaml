@@ -136,7 +136,8 @@ model:
     scheduler_type: LINEAR
     num_warmup_steps: 0
     push_to_hub: false
-    init_temp: 1.0
+    init_w: 1.0
+    init_b: 1.0
     confidence_threshold: 0.8
 data:
   model_class: transformers.AutoModelForSequenceClassification

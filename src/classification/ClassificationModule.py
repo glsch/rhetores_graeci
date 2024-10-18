@@ -95,7 +95,8 @@ class ClassificationModule(LightningModule):
             scheduler_type: SchedulerType = SchedulerType.LINEAR,
             num_warmup_steps: NonNegativeInt = 0,
             push_to_hub: bool = False,
-            init_temp: float = 1.0,
+            init_w: float = 1.0,
+            init_b: float = 0.0,
             confidence_threshold: NonNegativeFloat = 0.8,
     ):
         super().__init__()
@@ -123,7 +124,7 @@ class ClassificationModule(LightningModule):
         # an ugly workaround to keep predictions here, too
         self.sigla = []
 
-        self.set_temperature(val=init_temp)
+        self.set_temperature(init_w, init_b)
 
         self.calibrated = False
         
@@ -557,33 +558,36 @@ class ClassificationModule(LightningModule):
         # reset MulticlassF1Score
         mcls_f1.reset()
 
-    def set_temperature(self, val: float) -> None:
+    def set_temperature(self, val_w: float, val_b: float) -> None:
         """Set the temperature to a fixed value.
 
         Args:
-            val (float): Temperature value.
+            val_w (float): Weight temperature value.
+            val_b (float): Bias temperature value.
         """
-        if val <= 0:
-            raise ValueError("Temperature value must be positive.")
-
-        self.temp = torch.nn.Parameter(
-            torch.ones(1, device=self.device) * val, requires_grad=True
+        self.temp_w = torch.nn.Parameter(
+            torch.ones(self.num_labels, device=self.device) * val_w,
+            requires_grad=True,
+        )
+        self.temp_b = torch.nn.Parameter(
+            torch.ones(self.num_labels, device=self.device) * val_b,
+            requires_grad=True,
         )
 
     @property
     def temperature(self) -> list:
-        return [self.temp]
+        return [self.temp_w, self.temp_b]
 
     def _scale(self, logits: torch.Tensor) -> torch.Tensor:
-        """Scale the prediction with the optimal temperature.
+        """Scale the predictions with the optimal temperature.
 
         Args:
-            logits (Tensor): logits to be scaled.
+            logits (torch.Tensor): logits to be scaled.
 
         Returns:
-            Tensor: Scaled logits.
+            torch.Tensor: Scaled logits.
         """
-        return logits / self.temperature[0]
+        return self.temp_w * logits + self.temp_b
 
     def _process_batch(self, batch, stage="train") -> SequenceClassifierOutput:
 
