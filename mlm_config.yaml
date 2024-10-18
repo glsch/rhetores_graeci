@@ -73,7 +73,7 @@ trainer:
   - class_path: lightning.pytorch.callbacks.EarlyStopping
     init_args:
       monitor: val/loss
-      min_delta: 0.01
+      min_delta: 0.07
       patience: 3
       verbose: true
       mode: min
