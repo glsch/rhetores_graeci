@@ -164,12 +164,12 @@ class ClassificationModule(LightningModule):
         ce = MulticlassCalibrationError(num_classes=self.num_labels, n_bins=20, ignore_index=-100)
         ce.update(torch.softmax(all_logits, dim=1), all_labels)
 
-        #if not self.trainer.state.stage == "predict":
-        #    self.log("test/mce_bc", ce.compute(), logger=True, on_step=False, on_epoch=True)
-        #else:
-            #self.trainer.logger.log("test/mce_bc", ce.compute(), logger=True, on_step=False, on_epoch=True)
+        if not self.trainer.state.stage == "predict":
+           self.log("test/mce_bc", ce.compute(), logger=True, on_step=False, on_epoch=True)
+        else:
+            self.trainer.logger.log({"test/mce_bc": ce.compute()}) #, logger=True, on_step=False, on_epoch=True)
 
-        self.trainer.logger.log("test/mce_bc", ce.compute(), logger=True, on_step=False, on_epoch=True)
+        # self.trainer.logger.log("test/mce_bc", ce.compute(), logger=True, on_step=False, on_epoch=True)
 
         logger.info(f"Calibration error (before calibration): {ce.compute()}")
 
@@ -217,12 +217,10 @@ class ClassificationModule(LightningModule):
         all_labels = torch.cat(labels_list).detach().to(self.device)
 
         ce.update(torch.softmax(self._scale(all_logits), dim=1), all_labels)
-        # if not self.trainer.state.stage == "predict":
-        #     self.log("test/mce_ac", ce.compute(), logger=True, on_step=False, on_epoch=True)
-        # else:
-        #     self.trainer.logger.log("test/mce_ac", ce.compute(), logger=True, on_step=False, on_epoch=True)
-
-        self.trainer.logger.log("test/mce_ac", ce.compute(), logger=True, on_step=False, on_epoch=True)
+        if not self.trainer.state.stage == "predict":
+            self.log("test/mce_ac", ce.compute(), logger=True, on_step=False, on_epoch=True)
+        else:
+            self.trainer.logger.log({"test/mce_ac": ce.compute()})
 
         logger.info(f"Calibration error (after calibration): {ce.compute()}")
 
