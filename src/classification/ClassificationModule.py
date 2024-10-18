@@ -149,7 +149,7 @@ class ClassificationModule(LightningModule):
         labels_list = []
 
         with torch.no_grad():
-            for batch in tqdm(calibration_dataloader, disable=True):
+            for batch in tqdm(calibration_dataloader, disable=False):
                 model_outputs = self(batch)
                 logits_list.append(model_outputs.logits)
                 labels_list.append(batch.labels)
@@ -167,7 +167,7 @@ class ClassificationModule(LightningModule):
         if not self.trainer.state.stage == "predict":
            self.log("test/mce_bc", ce.compute(), logger=True, on_step=False, on_epoch=True)
         else:
-            self.trainer.logger.experiment.add_scalar({"test/mce_bc": ce.compute()}) #, logger=True, on_step=False, on_epoch=True)
+            self.trainer.logger.experiment.log({"test/mce_bc": ce.compute()}) #, logger=True, on_step=False, on_epoch=True)
 
         # self.trainer.logger.log("test/mce_bc", ce.compute(), logger=True, on_step=False, on_epoch=True)
 
@@ -208,7 +208,7 @@ class ClassificationModule(LightningModule):
         logits_list = []
         labels_list = []
         with torch.no_grad():
-            for batch in tqdm(calibration_dataloader, disable=True):
+            for batch in tqdm(calibration_dataloader, disable=False):
                 model_outputs = self(batch)
                 logits_list.append(model_outputs.logits)
                 labels_list.append(batch.labels)
@@ -220,7 +220,7 @@ class ClassificationModule(LightningModule):
         if not self.trainer.state.stage == "predict":
             self.log("test/mce_ac", ce.compute(), logger=True, on_step=False, on_epoch=True)
         else:
-            self.trainer.logger.experiment.add_scalar({"test/mce_ac": ce.compute()})
+            self.trainer.logger.experiment.log({"test/mce_ac": ce.compute()})
 
         logger.info(f"Calibration error (after calibration): {ce.compute()}")
 
