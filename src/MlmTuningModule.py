@@ -1,6 +1,6 @@
 import argparse
 import os
-from typing import Any, Tuple, Type
+from typing import Any, Tuple, Type, Union, Dict
 
 from lightning.pytorch import LightningModule
 
@@ -27,66 +27,41 @@ from jsonargparse.typing import NonNegativeInt, NonNegativeFloat,ClosedUnitInter
 
 from src.path_manager import PathManager
 from src.logger_config import logger
+from transformers import PreTrainedTokenizer, PreTrainedTokenizerFast
 
 # todo: add pushing to hub
-
-class AutoModelForMaskedLMWrapper(torch.nn.Module):
-    def __init__(self, pretrained_model_name_or_path: str = "bowphs/GreBerta"):
-        super().__init__()
-        self.pretrained_model_name_or_path = pretrained_model_name_or_path
-
-        if isinstance(pretrained_model_name_or_path, str):
-            self.model = AutoModelForMaskedLM.from_pretrained(pretrained_model_name_or_path=self.pretrained_model_name_or_path)
-            if self.pretrained_model_name_or_path != "altsoph/bert-base-ancientgreek-uncased":
-                self.tokenizer = AutoTokenizer.from_pretrained(self.pretrained_model_name_or_path)
-            else:
-                self.tokenizer = AutoTokenizer.from_pretrained("nlpaueb/bert-base-greek-uncased-v1")
-
-    def forward(self, x):
-        return self.model(**x)
 
 class MlmTuningModule(LightningModule):
 
     def __init__(
             self,
-            scheduler_type: SchedulerType = SchedulerType.LINEAR,
-            model: torch.nn.Module = lazy_instance(AutoModelForMaskedLMWrapper,
-                                                   pretrained_model_name_or_path="bowphs/GreBerta"),
+            task: str,
+            base_transformer: str,
+            model_class: Type[AutoModelForMaskedLM],
+            tokenizer: Union[PreTrainedTokenizer, PreTrainedTokenizerFast] = None,
             optimizer: OptimizerCallable = lambda p: torch.optim.AdamW(p),
+            scheduler_type: SchedulerType = SchedulerType.LINEAR,
             num_warmup_steps: NonNegativeInt = 0,
-            push_to_hub: bool = False
+            push_to_hub: bool = False,
+            **kwargs
     ):
         super().__init__()
 
-        self.model = model
-        if isinstance(model, AutoModelForMaskedLMWrapper):
-            self.tokenizer = self.model.tokenizer
-        else:
-            raise ValueError("Model must be an instance of AutoModelForMaskedLMWrapper")
+        self.task = task
+        self.tokenizer = tokenizer
+        self.model_class = model_class
+
+        self.push_to_hub = push_to_hub
 
         self.optimizer_callable = optimizer
         self.lr_scheduler_type = scheduler_type
         self.num_warmup_steps = num_warmup_steps
+        self.base_transformer = base_transformer
 
-        self.push_to_hub = push_to_hub
+        self.model = self.model_class.from_pretrained(pretrained_model_name_or_path=self.base_transformer,
+                                                      num_labels=self.num_labels, id2label=self.id2label)
 
-        self._dir_save_path = None
-
-        self.save_hyperparameters()
-
-    @property
-    def dir_save_path(self):
-        if self._dir_save_path is None:
-            self._dir_save_path = self._get_save_dir()
-
-        return self._dir_save_path
-
-    def _get_save_dir(self):
-        save_dir = self.trainer.logger.save_dir
-        if save_dir is None:
-            save_dir = self.trainer.default_root_dir
-
-        return save_dir
+        self.save_hyperparameters(ignore=["base_transformer", "model_class"])
 
     def forward(self, batch):
         return self.model(batch)
@@ -98,27 +73,6 @@ class MlmTuningModule(LightningModule):
 
     def training_step(self, batch, batch_idx):
         return self._process_batch(batch, "train")
-
-    # def on_train_epoch_end(self) -> None:
-    #     assert isinstance(self.model, AutoModelForMaskedLMWrapper)
-    #     # huggingface model saving
-    #     path = os.path.join(self.dir_save_path, "huggingface")
-    #     self.model.tokenizer.save_pretrained(path)
-    #     self.model.model.save_pretrained(path, from_pt=True, safe_serialization=False)
-    #
-    #     # pushing to hub, if necessary
-    #     if self.push_to_hub:
-    #         api.upload_folder(
-    #             commit_message=f"Pushing after epoch {self.trainer.current_epoch}",
-    #             folder_path=path,
-    #             repo_id=repo_id,
-    #             repo_type="model",
-    #             token=hub_token,
-    #             ignore_patterns=[".gitattributes", ".gitignore", "**/checkpoints/**", "logs/**", "**/wandb/**"],
-    #             delete_patterns=[".gitattributes", ".gitignore", "**/checkpoints/**", "logs/**", "**/wandb/**"]
-    #         )
-    #
-    #         model.model.push_to_hub(repo_id=repo_id, token=hub_token)
 
     def validation_step(self, batch, batch_idx):
         return self._process_batch(batch, "val")
@@ -132,7 +86,6 @@ class MlmTuningModule(LightningModule):
         optimizer_grouped_parameters = [
             {
                 "params": [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)],
-                # "weight_decay": self.weight_decay,
             },
             {
                 "params": [p for n, p in param_optimizer if any(nd in n for nd in no_decay)],
@@ -167,14 +120,3 @@ class MlmTuningModule(LightningModule):
                 "name": self.lr_scheduler_type
             },
         }
-
-        # lr_scheduler = get_scheduler(
-        #     name=self.lr_scheduler_type,
-        #     optimizer=optimizer,
-        #     num_warmup_steps=self.num_warmup_steps,
-        #     num_training_steps=num_training_steps
-        # )
-        #
-        # logger.info(f"MlmTuningModule.configure_optimizers() -- Using scheduler: {lr_scheduler}, {type(lr_scheduler)}, {lr_scheduler.__class__.__name__}")
-        #
-        # return [optimizer], [lr_scheduler]
