@@ -342,6 +342,11 @@ class AncientGreekDataModule(LightningDataModule):
         if self.dataset is None:
             self.dataset = pd.read_csv(self.preprocessed_dataset_path)
 
+        if self.task == "mlm":
+            prohibited_ids = [i for i in self.study_author_ids + self.unk_author_ids if i != 81]
+            self.dataset = self.dataset[~self.dataset["author_id"].isin(prohibited_ids)]
+            self.dataset = self.dataset[~((self.dataset["author_id"] == 81) & (self.dataset["work_id"] == 16))]
+
         else:
             logger.info(f"AncientGreekDataModule.setup() -- Dataset already loaded")
 
