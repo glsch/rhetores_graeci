@@ -666,6 +666,7 @@ class ClassificationModule(LightningModule):
         if self.rejection_method == RejectionMethod.THRESHOLD:
             if self.confidence_threshold < 0.5:
                 logger.warning(f"ClassificationModule.make_predictions() -- Confidence threshold is less than 0.5: {self.confidence_threshold}")
+
             logger.debug(f"ClassificationModule.make_predictions() -- Applying threshold: {rejection_threshold}")
             top_probs, top_indices = torch.max(probabilities, dim=1)
 
