@@ -103,6 +103,12 @@ class AncientGreekDataModule(LightningDataModule):
         self.num_workers = num_workers
         self.persistent_workers = persistent_workers
 
+        # authors for the study
+        self.study_author_ids = [284, 87, 607, 640, 594, 2002, 2178, 613, 1376, 592, 649, 560, 2586, 2903, 616, 605, 2027,
+                            81]
+        # authors which constituted UNK category in the article
+        self.unk_author_ids = [607, 594, 2002, 2178, 649, 560, 186, 2903, 605]
+
         if epithets is None:
             self.epithets = list()
         else:
@@ -171,11 +177,6 @@ class AncientGreekDataModule(LightningDataModule):
                 filtered_df = pd_dataset.df[pd_dataset.df["author_id"].isin(filtered_authors["author_id"])]
             else:
                 filtered_df = pd_dataset.df
-
-            # authors for the study
-            study_author_ids = [284, 87, 607, 640, 594, 2002, 2178, 613, 1376, 592, 649, 560, 2586, 2903, 616, 605, 2027, 81]
-            # authors which constituted UNK category in the article
-            unk_author_ids = [607, 594, 2002, 2178, 649, 560, 186, 2903, 605]
 
             filtered_df["levels"] = filtered_df["levels"].fillna(method="ffill")
 
@@ -276,7 +277,7 @@ class AncientGreekDataModule(LightningDataModule):
                 logger.info(f"AncientGreekDataModule.prepare_data() -- Creating classification dataset")
 
                 # retain only the authors for the study
-                self.dataset = self.dataset[self.dataset["author_id"].isin(study_author_ids) | self.dataset["author_id"].isin(unk_author_ids)]
+                self.dataset = self.dataset[self.dataset["author_id"].isin(self.study_author_ids) | self.dataset["author_id"].isin(self.unk_author_ids)]
                 # Dionysius Ars Rhetorica goes to predict corpus
                 predict_df = self.dataset[(self.dataset["author_id"] == 81) & (self.dataset["work_id"] == 16)]
                 predict_df = predict_df.assign(split="predict")
@@ -286,11 +287,11 @@ class AncientGreekDataModule(LightningDataModule):
 
                 # all minor authors go to UNK, which will only be in the test set
                 # therefore, we can create the base of this dataset
-                unk_df = self.dataset[self.dataset["author_id"].isin(unk_author_ids)]
+                unk_df = self.dataset[self.dataset["author_id"].isin(self.unk_author_ids)]
                 unk_df = unk_df.assign(split="test")
 
                 # the rest is used for training and validation
-                self.dataset = self.dataset[~self.dataset["author_id"].isin(unk_author_ids)]
+                self.dataset = self.dataset[~self.dataset["author_id"].isin(self.unk_author_ids)]
 
                 train_df = self.dataset.groupby("author_id").sample(frac=.75)
                 train_df = train_df.assign(split="train")
@@ -352,6 +353,11 @@ class AncientGreekDataModule(LightningDataModule):
         self.predict_df = self.predict_df.assign(siglum=lambda x: x["siglum"].astype(int))
 
         if self.task == "mlm":
+            prohibited_ids = [i for i in self.study_author_ids + self.unk_author_ids if i != 81]
+
+            self.train_df = self.train_df[~self.train_df["author_id"].isin(prohibited_ids)]
+            self.val_df = self.val_df[~self.val_df["author_id"].isin(prohibited_ids)]
+            self.test_df = self.test_df[~self.test_df["author_id"].isin(prohibited_ids)]
             dataset_cls = MLMDataset
             self.collate_fn = DataCollatorForLanguageModeling(tokenizer=self.tokenizer, mlm=True, mlm_probability=0.15)
 
