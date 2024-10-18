@@ -456,7 +456,7 @@ class AncientGreekDataModule(LightningDataModule):
         sampler = self.get_sampler(stage="test")
         loader = DataLoader(
             self.test_dataset,
-            batch_size=1,
+            batch_size=self.batch_size,
             collate_fn=self.collate_fn,
             sampler=None,
             shuffle=False,
