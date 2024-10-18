@@ -166,7 +166,7 @@ class ClassificationModule(LightningModule):
         MulticlassCalibrationError.plot = _ce_plot
         ce = MulticlassCalibrationError(num_classes=self.num_labels, n_bins=20, ignore_index=-100)
         predictions = torch.softmax(all_logits, dim=1)
-        ce.update(torch.softmax(all_logits, dim=1), all_labels)
+        ce.update(predictions, all_labels)
 
         if not self.trainer.state.stage == "predict":
            self.log("test/mce_bc", ce.compute(), logger=True, on_step=False, on_epoch=True)
