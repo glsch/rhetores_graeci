@@ -115,7 +115,7 @@ class ClassificationModule(LightningModule):
 
         self.model = self.model_class.from_pretrained(pretrained_model_name_or_path=self.base_transformer, num_labels=self.num_labels, id2label=self.id2label)
 
-        self.save_hyperparameters(ignore=["base_transformer", "model_class"])
+        self.save_hyperparameters(ignore=["base_transformer", "model_class", "task", "tokenizer"])
 
         self.epoch_outputs = {"train": [], "val": [], "test": [], "predict": []}
         self.epoch_labels = {"train": [], "val": [], "test": [], "predict": []}
