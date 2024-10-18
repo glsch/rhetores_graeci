@@ -43,14 +43,6 @@ trainer:
       resume_from: null
       settings: null
   callbacks:
-  - class_path: lightning.pytorch.cli.SaveConfigCallback
-    init_args:
-      parser: null
-      config: null
-      config_filename: config.yaml
-      overwrite: false
-      multifile: false
-      save_to_log_dir: true
   - class_path: lightning.pytorch.callbacks.ModelCheckpoint
     init_args:
       dirpath: null
@@ -92,7 +84,7 @@ trainer:
       check_on_train_epoch_end: false
       log_rank_zero_only: false
   fast_dev_run: false
-  max_epochs: 30
+  max_epochs: 5
   min_epochs: null
   max_steps: -1
   min_steps: null
@@ -126,11 +118,6 @@ trainer:
 model:
   class_path: src.MlmTuningModule.MlmTuningModule
   init_args:
-    scheduler_type: LINEAR
-    model:
-      class_path: src.MlmTuningModule.AutoModelForMaskedLMWrapper
-      init_args:
-        pretrained_model_name_or_path: bowphs/GreBerta
     optimizer:
       class_path: torch.optim.AdamW
       init_args:
@@ -146,9 +133,12 @@ model:
         capturable: false
         differentiable: false
         fused: null
+    scheduler_type: LINEAR
     num_warmup_steps: 0
     push_to_hub: false
 data:
+  model_class: transformers.AutoModelForMaskedLM
+  base_transformer: bowphs/GreBerta
   epithets:
   - Rhet.
   - Orat.

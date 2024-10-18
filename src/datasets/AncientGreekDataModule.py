@@ -23,8 +23,6 @@ from nltk import sent_tokenize, word_tokenize
 import pandas as pd
 from torch.utils.data import Dataset, DataLoader
 
-from src.MlmTuningModule import AutoModelForMaskedLMWrapper
-
 from src.datasets.MlmDataset import MLMDataset
 from src.datasets.ClassificationDataset import ClassificationDataset
 from src.logger_config import logger
@@ -353,7 +351,6 @@ class AncientGreekDataModule(LightningDataModule):
         self.predict_df = self.predict_df.assign(siglum=lambda x: x["siglum"].astype(int))
 
         if self.task == "mlm":
-            logger.info(f"AncientGreekDataModule.setup() -- Model is subclass of {AutoModelForMaskedLMWrapper}: {self.trainer.model.model.__class__.__name__}")
             dataset_cls = MLMDataset
             self.collate_fn = DataCollatorForLanguageModeling(tokenizer=self.tokenizer, mlm=True, mlm_probability=0.15)
 
