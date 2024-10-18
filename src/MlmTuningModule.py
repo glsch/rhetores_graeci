@@ -60,7 +60,7 @@ class MlmTuningModule(LightningModule):
 
         self.model = self.model_class.from_pretrained(token=os.getenv("HF_TOKEN", None), pretrained_model_name_or_path=self.base_transformer)
 
-        self.save_hyperparameters(ignore=["base_transformer", "model_class"])
+        self.save_hyperparameters(ignore=["base_transformer", "model_class", "task", "tokenizer"])
 
     def forward(self, batch):
         return self.model(**batch.to(self.device))
