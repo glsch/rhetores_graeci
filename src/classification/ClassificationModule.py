@@ -341,7 +341,7 @@ class ClassificationModule(LightningModule):
 
         logical_divs = pd.DataFrame()
         for division in logical["division"].unique().tolist():
-            sorted_preds = logical[logical["division"] == division].melt(id_vars=["siglum"], var_name="class",
+            sorted_preds = logical[logical["division"] == division].melt(id_vars=["division"], var_name="class",
                                                                         value_name="probability").sort_values(
                 by="probability", ascending=False)
             logical_divs = pd.concat([logical_divs, sorted_preds])
