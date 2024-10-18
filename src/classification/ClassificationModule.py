@@ -130,7 +130,7 @@ class ClassificationModule(LightningModule):
         self.calibrated = False
         
     def on_test_start(self):
-        calibration_dataloader = self.trainer.datamodule.test_dataloader()
+        calibration_dataloader = self.trainer.datamodule.val_dataloader()
 
         with torch.inference_mode(False):
             self.train(mode=True)
@@ -244,7 +244,7 @@ class ClassificationModule(LightningModule):
 
         self.trainer.logger.log_image(f"top_label_confidence_vector_ac", images=[img_path])
 
-        self.tune_threshold(all_logits, all_labels, num_thresholds=1000)
+        # self.tune_threshold(all_logits, all_labels, num_thresholds=1000)
 
     def forward(self, batch):
         return self.model.forward(**batch.to(self.device))
@@ -689,29 +689,30 @@ class ClassificationModule(LightningModule):
 
         return predictions
 
-    def tune_threshold(self, validation_logits, validation_targets, num_thresholds=100):
-        logger.info("Tuning confidence threshold...")
-        thresholds = np.linspace(0, 1, num_thresholds)
-        best_f1 = 0
-        best_threshold = self.confidence_threshold
-
-        for threshold in thresholds:
-            predictions = self.make_predictions(validation_logits, confidence_threshold=threshold)
-            # Convert tensor to numpy for sklearn metrics
-            predictions_np = predictions.cpu().numpy()
-            targets_np = validation_targets.cpu().numpy()
-
-            # Calculate F1 score, ignoring the rejection class
-            f1 = f1_score(targets_np, predictions_np, average='weighted', labels=range(self.num_labels))
-
-            if f1 > best_f1:
-                best_f1 = f1
-                best_threshold = threshold
-
-        logger.info(f"Best threshold: {best_threshold:.4f}, Best F1 score: {best_f1:.4f}")
-        self.confidence_threshold = best_threshold
-
-        return best_threshold
+    # def tune_threshold(self, validation_logits, validation_targets, num_thresholds=100):
+    #     logger.info("Tuning confidence threshold...")
+    #     thresholds = np.linspace(0, 1, num_thresholds)
+    #     best_f1 = 0
+    #     best_threshold = self.confidence_threshold
+    #
+    #     probabilities = torch.nn.functional.softmax(validation_logits, dim=1)
+    #
+    #     for threshold in thresholds:
+    #         predictions = self.make_predictions(validation_logits, confidence_threshold=threshold)
+    #         # Convert tensor to numpy for sklearn metrics
+    #         predictions_np = predictions.cpu().numpy()
+    #         targets_np = validation_targets.cpu().numpy()
+    #
+    #         # Calculate F1 score, ignoring the rejection class
+    #         f1 = f1_score(targets_np, predictions_np, average='weighted', labels=range(self.num_labels))
+    #
+    #         if f1 > best_f1:
+    #             best_f1 = f1
+    #             best_threshold = threshold
+    #
+    #     logger.info(f"Best threshold: {best_threshold:.4f}, Best F1 score: {best_f1:.4f}")
+    #     self.confidence_threshold = best_threshold
+    #     return best_threshold
 
 
 

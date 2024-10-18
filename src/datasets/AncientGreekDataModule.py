@@ -278,12 +278,15 @@ class AncientGreekDataModule(LightningDataModule):
 
                 # retain only the authors for the study
                 self.dataset = self.dataset[self.dataset["author_id"].isin(self.study_author_ids) | self.dataset["author_id"].isin(self.unk_author_ids)]
+                rest_df = self.dataset[~self.dataset["author_id"].isin(self.study_author_ids)]
+                rest_df = self.dataset[~self.dataset["author_id"].isin(self.unk_author_ids)]
                 # Dionysius Ars Rhetorica goes to predict corpus
                 predict_df = self.dataset[(self.dataset["author_id"] == 81) & (self.dataset["work_id"] == 16)]
                 predict_df = predict_df.assign(split="predict")
                 predict_df = predict_df.assign(siglum=lambda x: x["siglum"].str.split("_").str[-1].astype(int))
 
                 self.dataset = self.dataset[~self.dataset["unique_id"].isin(predict_df["unique_id"])]
+
 
                 # all minor authors go to UNK, which will only be in the test set
                 # therefore, we can create the base of this dataset
@@ -302,6 +305,11 @@ class AncientGreekDataModule(LightningDataModule):
                 val_df = val_df.assign(split="val")
                 test_df = test_df.assign(split="test")
 
+                more_unk_df = rest_df.sample(n=val_df.shape[0] - unk_df.shape[0])
+                more_unk_df = more_unk_df.assign(split="test")
+
+                unk_df = pd.concat([unk_df, more_unk_df])
+
                 logger.info("AncientGreekDataModule.prepare_data() -- Creating dataset")
                 self.dataset = pd.concat([train_df, val_df, test_df])
                 encoded_labels, unique = pd.factorize(self.dataset["author_id"])
@@ -312,6 +320,10 @@ class AncientGreekDataModule(LightningDataModule):
                 unk_df = unk_df.assign(label=-100)
                 predict_df = predict_df.assign(label=-100)
                 self.dataset = pd.concat([self.dataset, unk_df, predict_df])
+
+
+
+
 
                 logger.info(f"AncientGreekDataModule.prepare_data() -- Number of authors full dataset: {self.dataset['author_id'].unique().tolist()}")
                 logger.info(f"AncientGreekDataModule.prepare_data() -- Number of authors train df: {train_df['author_id'].unique().tolist()}")
