@@ -28,11 +28,6 @@ class ClassificationDataset(Dataset):
         self.tokenizer = tokenizer
         self.split = split
 
-        # self.df["label"], unique = pd.factorize(self.df["target"])
-
-        #self.id2label = {i: l for i, l in enumerate(unique)}
-        #self.label2id = {l: i for i, l in self.id2label.items()}
-
         self.records = self.df.to_dict(orient="records")
 
     def __len__(self):
@@ -46,15 +41,12 @@ class ClassificationDataset(Dataset):
             padding="max_length",
             return_attention_mask=True,
             return_token_type_ids=True,
-            # return_special_tokens_mask=True
         )
 
         if self.split == "predict":
             tokenized["siglum"] = self.records[idx]["siglum"]
 
         tokenized["label"] = self.records[idx]["label"]
-
-        # print(tokenized)
 
         return tokenized
 
