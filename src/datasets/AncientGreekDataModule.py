@@ -329,7 +329,8 @@ class AncientGreekDataModule(LightningDataModule):
         else:
             self.dataset = pd.read_csv(self.preprocessed_dataset_path)
 
-        self._id2label = self.dataset[self.dataset["split"] != "predict"][["label", "target"]].drop_duplicates().set_index("label")["target"].to_dict()
+        if self.task == "classification":
+            self._id2label = self.dataset[self.dataset["split"] != "predict"][["label", "target"]].drop_duplicates().set_index("label")["target"].to_dict()
 
     def setup(self, stage: str) -> None:
         logger.info(f"AncientGreekDataModule.setup() -- Stage: {stage}")
