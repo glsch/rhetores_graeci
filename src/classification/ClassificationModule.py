@@ -339,7 +339,8 @@ class ClassificationModule(LightningModule):
 
         df_final = df_final.assign(division=df_final['siglum'].apply(lambda x: chapter2div(x)))
         logical = df_final[df_final["division"] != -100]
-        logical = logical[["division", "probability", "class"]]
+        # logical = logical[["division", "probability", "class"]]
+        logical.drop(columns=["siglum"], inplace=True)
 
         logical_divs = pd.DataFrame()
         for division in logical["division"].unique().tolist():
