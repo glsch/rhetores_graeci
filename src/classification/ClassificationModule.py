@@ -171,8 +171,6 @@ class ClassificationModule(LightningModule):
         ce = MulticlassCalibrationError(num_classes=self.num_labels + 1, n_bins=20, ignore_index=-100)
         probabilities = torch.softmax(all_logits, dim=1)
         top_probs, top_indices = torch.max(probabilities, dim=1)
-        logger.debug(f"ClassificationModule.make_predictions() -- Top probs: {top_probs}, Top indices: {top_indices}")
-        # Compare the top probability with the rejection threshold
         predictions = torch.where(top_probs > self.confidence_threshold, top_indices, self.num_labels)
 
         ce.update(predictions, all_labels)
