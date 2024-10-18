@@ -348,13 +348,13 @@ class ClassificationModule(LightningModule):
 
 
         # logical divisions of the AR
-        div_df_melted = div_df.melt(id_vars=['siglum'], var_name='class', value_name='probability')
-        div_df_grouped = div_df_melted.groupby(['siglum', 'class'])['probability'].mean().reset_index()
-        div_df_final = div_df_grouped.pivot(index='siglum', columns='class', values='probability').reset_index()
+        div_df_melted = div_df.melt(id_vars=['division'], var_name='class', value_name='probability')
+        div_df_grouped = div_df_melted.groupby(['division', 'class'])['probability'].mean().reset_index()
+        div_df_final = div_df_grouped.pivot(index='division', columns='class', values='probability').reset_index()
 
         div_df_final.columns.name = None
         div_df_final = div_df_final.rename(
-            columns={col: self.id2label[col] for col in div_df_final.columns if col != 'siglum'})
+            columns={col: self.id2label[col] for col in div_df_final.columns if col != 'division'})
 
         div_results = pd.DataFrame()
         for division in div_df_final["division"].unique().tolist():
