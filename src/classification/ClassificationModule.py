@@ -353,12 +353,12 @@ class ClassificationModule(LightningModule):
             results2save = results.to_dict('tight')
             data = results2save['data']
             columns = results2save['columns']
-            self.trainer.logger.log_table(keys="Chapter predictions", columns=columns, data=data)
+            self.trainer.logger.log_table(key="Chapter predictions", columns=columns, data=data)
 
             results2save = logical_divs.to_dict('tight')
             data = results2save['data']
             columns = results2save['columns']
-            self.trainer.logger.log_table(keys="Logical parts", columns=columns, data=data)
+            self.trainer.logger.log_table(key="Logical parts", columns=columns, data=data)
 
 
         return results
