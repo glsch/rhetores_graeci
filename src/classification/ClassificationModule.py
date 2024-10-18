@@ -328,11 +328,40 @@ class ClassificationModule(LightningModule):
 
         results.to_csv(os.path.join(path, f"chapter_predictions_{self.base_transformer.replace('/', '_')}.csv"), index=False)
 
+        # logical divisions of the AR
+        def chapter2div(siglum):
+            if siglum in [1, 7]:
+                return "1 & 7"
+            if siglum in [2, 3, 4]:
+                return "2-4"
+            if siglum in [5, 6]:
+                return "5 & 6"
+            return -100
+
+        df_final = df_final.assign(division=df_final['siglum'].apply(lambda x: chapter2div(x)))
+        logical = df_final[df_final["division"] != -100]
+
+        logical_divs = pd.DataFrame()
+        for division in logical["division"].unique().tolist():
+            sorted_preds = logical[logical["division"] == division].melt(id_vars=["siglum"], var_name="class",
+                                                                        value_name="probability").sort_values(
+                by="probability", ascending=False)
+            logical_divs = pd.concat([logical_divs, sorted_preds])
+
+        logical_divs.to_csv(os.path.join(path, f"logical_parts_predictions_{self.base_transformer.replace('/', '_')}.csv"),
+                       index=False)
+
         if isinstance(self.trainer.logger, WandbLogger):
             results2save = results.to_dict('tight')
             data = results2save['data']
             columns = results2save['columns']
             self.trainer.logger.log_table(keys="Chapter predictions", columns=columns, data=data)
+
+            results2save = logical_divs.to_dict('tight')
+            data = results2save['data']
+            columns = results2save['columns']
+            self.trainer.logger.log_table(keys="Logical parts", columns=columns, data=data)
+
 
         return results
 
