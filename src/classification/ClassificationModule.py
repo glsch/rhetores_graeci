@@ -167,7 +167,7 @@ class ClassificationModule(LightningModule):
         if not self.trainer.state.stage == "predict":
            self.log("test/mce_bc", ce.compute(), logger=True, on_step=False, on_epoch=True)
         else:
-            self.trainer.logger.log({"test/mce_bc": ce.compute()}) #, logger=True, on_step=False, on_epoch=True)
+            self.trainer.logger.experiment.add_scalar({"test/mce_bc": ce.compute()}) #, logger=True, on_step=False, on_epoch=True)
 
         # self.trainer.logger.log("test/mce_bc", ce.compute(), logger=True, on_step=False, on_epoch=True)
 
@@ -220,7 +220,7 @@ class ClassificationModule(LightningModule):
         if not self.trainer.state.stage == "predict":
             self.log("test/mce_ac", ce.compute(), logger=True, on_step=False, on_epoch=True)
         else:
-            self.trainer.logger.log({"test/mce_ac": ce.compute()})
+            self.trainer.logger.experiment.add_scalar({"test/mce_ac": ce.compute()})
 
         logger.info(f"Calibration error (after calibration): {ce.compute()}")
 
