@@ -21,6 +21,7 @@ from torchmetrics.functional.classification import (multiclass_f1_score, multicl
 from torchmetrics.classification import MulticlassF1Score, MulticlassCalibrationError
 from torch.nn import CrossEntropyLoss
 from lightning.pytorch.loggers.wandb import WandbLogger
+import wandb
 
 import numpy as np
 import pandas as pd
@@ -338,6 +339,7 @@ class ClassificationModule(LightningModule):
 
         df_final = df_final.assign(division=df_final['siglum'].apply(lambda x: chapter2div(x)))
         logical = df_final[df_final["division"] != -100]
+        logical = logical[["division", "probability", "class"]]
 
         logical_divs = pd.DataFrame()
         for division in logical["division"].unique().tolist():
@@ -350,15 +352,19 @@ class ClassificationModule(LightningModule):
                        index=False)
 
         if isinstance(self.trainer.logger, WandbLogger):
+
             results2save = results.to_dict('tight')
             data = results2save['data']
             columns = results2save['columns']
-            self.trainer.logger.log_table(key="Chapter predictions", columns=columns, data=data)
+            chapter_table = wandb.Table(columns=columns, data=data)
+            self.trainer.logger.experiment.log({"Chapter predictions": chapter_table})
+            # self.trainer.logger.log_table(key=, columns=columns, data=data)
 
             results2save = logical_divs.to_dict('tight')
             data = results2save['data']
             columns = results2save['columns']
-            self.trainer.logger.log_table(key="Logical parts", columns=columns, data=data)
+            logical_parts_table = wandb.Table(columns=columns, data=data)
+            self.trainer.logger.experiment.log({"Logical parts predictions": logical_parts_table})
 
 
         return results
