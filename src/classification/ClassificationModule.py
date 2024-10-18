@@ -134,9 +134,9 @@ class ClassificationModule(LightningModule):
         with torch.inference_mode(False):
             self.train(mode=True)
             self.temperature[0].requires_grad = True
-            self.temperature_calibration(calibration_dataloader)
+            self.vector_calibration(calibration_dataloader)
             
-    def temperature_calibration(self, calibration_dataloader):
+    def vector_calibration(self, calibration_dataloader):
         """
         Calibrate the model by optimizing a temperature, by which the model's logits is divided.
         :param calibration_dataloader:
@@ -160,7 +160,7 @@ class ClassificationModule(LightningModule):
         all_logits = torch.cat(logits_list).detach().to(self.device)
         all_labels = torch.cat(labels_list).detach().to(self.device)
 
-        logger.debug(f"Temperature: {self.temperature[0]}")
+        logger.debug(f"Temperature: {self.temperature}")
         #logger.debug(f"Temperature-bias: {self.temperature[1]}")
 
         MulticlassCalibrationError.plot = _ce_plot
@@ -278,7 +278,7 @@ class ClassificationModule(LightningModule):
         with torch.inference_mode(False):
             self.train(mode=True)
             self.temperature[0].requires_grad = True
-            self.temperature_calibration(calibration_dataloader)
+            self.vector_calibration(calibration_dataloader)
 
     def predict_step(self, batch) -> Any:
         outputs = self._process_batch(batch, stage="predict")
