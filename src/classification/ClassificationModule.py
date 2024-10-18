@@ -661,6 +661,8 @@ class ClassificationModule(LightningModule):
             # Compare the top probability with the rejection threshold
             predictions = torch.where(top_probs > rejection_threshold, top_indices, reject_label)
 
+            print(predictions)
+
         elif method == "difference":
             logger.debug(f"ClassificationModule.make_predictions() -- Applying threshold: {rejection_threshold}")
             top2_probs, top2_indices = torch.topk(probabilities, 2, dim=1)
