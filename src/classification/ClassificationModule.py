@@ -135,7 +135,7 @@ class ClassificationModule(LightningModule):
             
     def temperature_calibration(self, calibration_dataloader):
         """
-        Calibrate the model by optimizing a vector which is applied to the model's logits.
+        Calibrate the model by optimizing a temperature, by which the model's logits is divided.
         :param calibration_dataloader:
         :return:
         """
@@ -149,7 +149,7 @@ class ClassificationModule(LightningModule):
         labels_list = []
 
         with torch.no_grad():
-            for batch in tqdm(calibration_dataloader, disable=False):
+            for batch in tqdm(calibration_dataloader, disable=True):
                 model_outputs = self(batch)
                 logits_list.append(model_outputs.logits)
                 labels_list.append(batch.labels)
@@ -208,7 +208,7 @@ class ClassificationModule(LightningModule):
         logits_list = []
         labels_list = []
         with torch.no_grad():
-            for batch in tqdm(calibration_dataloader, disable=False):
+            for batch in tqdm(calibration_dataloader, disable=True):
                 model_outputs = self(batch)
                 logits_list.append(model_outputs.logits)
                 labels_list.append(batch.labels)
