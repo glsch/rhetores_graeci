@@ -370,9 +370,9 @@ class AncientGreekDataModule(LightningDataModule):
             # length_before_new_iter = self.train_df.shape[0] * 5
             # defining MPerClassSampler's for DataLoaders
             self.sampler = [
-                MPerClassSampler(self.train_df["label"].tolist(), m=m, length_before_new_iter=self.train_df.shape[0] * 10),
-                MPerClassSampler(self.val_df["label"].tolist(), m=m, length_before_new_iter=self.val_df.shape[0] * 10),
-                MPerClassSampler(self.test_df["label"].tolist(), m=m, length_before_new_iter=self.test_df.shape[0] * 10),
+                MPerClassSampler(self.train_df["label"].tolist(), m=m, length_before_new_iter=self.train_df.shape[0]),
+                MPerClassSampler(self.val_df["label"].tolist(), m=m, length_before_new_iter=self.val_df.shape[0]),
+                MPerClassSampler(self.test_df["label"].tolist(), m=m, length_before_new_iter=self.test_df.shape[0]),
             ]
 
         else:

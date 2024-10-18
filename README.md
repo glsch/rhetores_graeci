@@ -98,11 +98,11 @@ Each work was split into non-overlapping chunks of 512 tokens. The tokenizer use
 All the models were tuned as long as Cross-Entropy loss continued to decrease more than 0.05 over 3 epochs (for more parameters, see the article).
 Mask probability 0.15. 
 
-|      Base transformer          | Stopped after epoch | Best CE on val set | LR   |
-|--------------------------------|---------------------|--------------------|------|
-| bowphs/GreBerta                | 15                  | 1.82               | 5e-5 |
-| altsoph/bert-base-ancientgreek-uncased              | 20                  | 1.77               | 1e-4 |
-| pranaydeeps/Ancient-Greek-BERT              | 13                  | 1.63               |   1e-4   |
+|      Base transformer          | Stopped after epoch | Best CE on val set | Test CE | LR   |
+|--------------------------------|---------------------|--------------------|---------|------|
+| bowphs/GreBerta                | 15                  | 1.82               | 1.83    | 5e-5 |
+| altsoph/bert-base-ancientgreek-uncased              | 20                  | 1.77               | 1.73    | 1e-4 |
+| pranaydeeps/Ancient-Greek-BERT              | 13                  | 1.63                   | 1.59    |   1e-4   |
 
 ## Classifier training
 ### Dataset
