@@ -113,7 +113,7 @@ class ClassificationModule(LightningModule):
         self.confidence_threshold = confidence_threshold
         self.base_transformer = base_transformer
 
-        self.model = self.model_class.from_pretrained(pretrained_model_name_or_path=self.base_transformer, num_labels=self.num_labels, id2label=self.id2label)
+        self.model = self.model_class.from_pretrained(pretrained_model_name_or_path=self.base_transformer, num_labels=self.num_labels, id2label=self.id2label, label2id={v: k for k, v in self.id2label.items()})
 
         self.save_hyperparameters(ignore=["base_transformer", "model_class", "task", "tokenizer"])
 
