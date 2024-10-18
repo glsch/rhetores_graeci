@@ -2,6 +2,7 @@ import enum
 import os
 from typing import Union, List, Dict, Type, Any
 
+import lightning.fabric.utilities.exceptions
 from jsonargparse.typing import NonNegativeInt, NonNegativeFloat,ClosedUnitInterval, restricted_number_type, PositiveInt
 from jsonargparse import lazy_instance
 from lightning.pytorch import LightningModule
@@ -161,7 +162,10 @@ class ClassificationModule(LightningModule):
         MulticlassCalibrationError.plot = _ce_plot
         ce = MulticlassCalibrationError(num_classes=self.num_labels, n_bins=20, ignore_index=-100)
         ce.update(torch.softmax(all_logits, dim=1), all_labels)
-        self.log("test/mce_bc", ce.compute(), logger=True, on_step=False, on_epoch=True)
+
+        if not self.trainer.state.stage == "predict":
+            self.log("test/mce_bc", ce.compute(), logger=True, on_step=False, on_epoch=True)
+
         logger.info(f"Calibration error (before calibration): {ce.compute()}")
 
         fig, ax = plt.subplots(figsize=(25, 25))
@@ -208,7 +212,8 @@ class ClassificationModule(LightningModule):
         all_labels = torch.cat(labels_list).detach().to(self.device)
 
         ce.update(torch.softmax(self._scale(all_logits), dim=1), all_labels)
-        self.log("test/mce_ac", ce.compute(), logger=True, on_step=False, on_epoch=True)
+        if not self.trainer.state.stage == "predict":
+            self.log("test/mce_ac", ce.compute(), logger=True, on_step=False, on_epoch=True)
         logger.info(f"Calibration error (after calibration): {ce.compute()}")
 
         fig, ax = plt.subplots(figsize=(25, 25))
