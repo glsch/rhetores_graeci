@@ -657,13 +657,20 @@ class ClassificationModule(LightningModule):
         if method == "pt":
             logger.debug(f"ClassificationModule.make_predictions() -- Applying threshold: {rejection_threshold}")
             top_probs, top_indices = torch.max(probabilities, dim=1)
+
+            mean_top_prob = torch.mean(top_probs)
+            std_top_prob = torch.std(top_probs)
+
+            logger.info(f"Mean of top probabilities: {mean_top_prob.item():.4f}")
+            logger.info(f"Standard deviation of top probabilities: {std_top_prob.item():.4f}")
+
             logger.debug(f"ClassificationModule.make_predictions() -- Top probs: {top_probs}, Top indices: {top_indices}")
             # Compare the top probability with the rejection threshold
             predictions = torch.where(top_probs > rejection_threshold, top_indices, reject_label)
 
-            for i in range(predictions.shape[0]):
-                logger.info(f"Document {i} -- Prediction: {predictions[i]}")
-                logger.info(f"Prob {i} -- Prediction: {top_probs[i]}")
+            #for i in range(predictions.shape[0]):
+            #    logger.info(f"Document {i} -- Prediction: {predictions[i]}")
+            #    logger.info(f"Prob {i} -- Prediction: {top_probs[i]}")
 
 
         elif method == "difference":
