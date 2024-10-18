@@ -63,7 +63,7 @@ class MlmTuningModule(LightningModule):
         self.save_hyperparameters(ignore=["base_transformer", "model_class"])
 
     def forward(self, batch):
-        return self.model(batch)
+        return self.model(**batch.to(self.device))
 
     def _process_batch(self, batch, stage="train"):
         output = self.forward(batch)
