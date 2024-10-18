@@ -6,7 +6,7 @@ from huggingface_hub import HfApi, create_repo
 from src.logger_config import logger
 
 class PushToHuggingfaceCallback(Callback):
-    def __init__(self, repo_owner=None, token=None, private=False, suffix: str="_rhetores"):
+    def __init__(self, repo_owner=None, token=None, private=True, suffix: str="_rhetores"):
         super().__init__()
 
         self.token = token or os.getenv("HF_TOKEN", None)

@@ -58,7 +58,7 @@ class MlmTuningModule(LightningModule):
         self.num_warmup_steps = num_warmup_steps
         self.base_transformer = base_transformer
 
-        self.model = self.model_class.from_pretrained(pretrained_model_name_or_path=self.base_transformer)
+        self.model = self.model_class.from_pretrained(token=os.getenv("HF_TOKEN", None), pretrained_model_name_or_path=self.base_transformer)
 
         self.save_hyperparameters(ignore=["base_transformer", "model_class"])
 

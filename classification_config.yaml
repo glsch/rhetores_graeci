@@ -68,7 +68,7 @@ trainer:
     init_args:
       repo_owner: glsch
       token: null
-      private: false
+      private: true
       suffix: _classification
   - class_path: lightning.pytorch.callbacks.EarlyStopping
     init_args:
