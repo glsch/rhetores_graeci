@@ -256,6 +256,14 @@ class ClassificationModule(LightningModule):
         with torch.no_grad():
             self.compute_metrics(stage="test")
 
+    def on_predict_start(self):
+        calibration_dataloader = self.trainer.datamodule.val_dataloader()
+
+        with torch.inference_mode(False):
+            self.train(mode=True)
+            self.temperature[0].requires_grad = True
+            self.temperature_calibration(calibration_dataloader)
+
     def predict_step(self, batch) -> Any:
         outputs = self._process_batch(batch, stage="predict")
         return outputs.loss
@@ -267,8 +275,10 @@ class ClassificationModule(LightningModule):
 
     def get_per_chapter_stats(self, stage="predict"):
         path = self.trainer.logger.experiment.dir
+
         if path is None:
             path = self.trainer.default_root_dir
+
         save_dir = self.trainer.logger.save_dir if self.trainer.logger.save_dir is not None else self.trainer.default_root_dir
         logger.debug(f"ClassificationModule.compute_metrics() -- Saving the plot to {save_dir}")
 
@@ -511,6 +521,7 @@ class ClassificationModule(LightningModule):
         return logits / self.temperature[0]
 
     def _process_batch(self, batch, stage="train") -> SequenceClassifierOutput:
+
         assert self.num_labels is not None, "Number of classes must be set before processing a batch"
         logger.debug(f"ClassificationModule._process_batch() -- Processing batch for stage: {stage}")
         logger.debug(f"ClassificationModule._process_batch() -- Batch: {batch}")
@@ -518,7 +529,6 @@ class ClassificationModule(LightningModule):
         logger.debug(f"ClassificationModule._process_batch() -- Batch labels: {batch['labels'].shape}")
         logger.debug(f"ClassificationModule._process_batch() -- Batch labels: {batch['labels']}")
         logger.debug(f"ClassificationModule._process_batch() -- Num classes: {self.num_labels}")
-
 
         if stage == "predict":
             self.sigla.append(batch["siglum"])
