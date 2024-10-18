@@ -448,7 +448,7 @@ class AncientGreekDataModule(LightningDataModule):
             self.test_dataset,
             batch_size=self.batch_size,
             collate_fn=self.collate_fn,
-            # sampler=sampler,
+            sampler=sampler,
             shuffle=False,
             num_workers=self.num_workers,
             persistent_workers=self.persistent_workers
