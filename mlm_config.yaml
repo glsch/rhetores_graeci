@@ -16,7 +16,7 @@ trainer:
       dir: null
       id: null
       anonymous: null
-      project: RhetoresGraeci
+      project: RhetoresGraeciFinal
       log_model: all
       experiment: null
       prefix: ''
