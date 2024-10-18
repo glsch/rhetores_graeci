@@ -20,6 +20,7 @@ from torchmetrics.utilities.plot import _AX_TYPE, _PLOT_OUT_TYPE
 from torchmetrics.functional.classification import (multiclass_f1_score, multiclass_recall, multiclass_accuracy, multiclass_precision, multiclass_confusion_matrix)
 from torchmetrics.classification import MulticlassF1Score, MulticlassCalibrationError
 from torch.nn import CrossEntropyLoss
+from lightning.pytorch.loggers.wandb import WandbLogger
 
 import numpy as np
 import pandas as pd
@@ -322,10 +323,16 @@ class ClassificationModule(LightningModule):
 
         results = pd.DataFrame()
         for chapter in df_final["siglum"].unique().tolist():
-            top5 = df_final[df_final["siglum"] == chapter].melt(id_vars=["siglum"], var_name="class", value_name="probability").sort_values(by="probability", ascending=False).head(5)
-            results = pd.concat([results, top5])
+            sorted_preds = df_final[df_final["siglum"] == chapter].melt(id_vars=["siglum"], var_name="class", value_name="probability").sort_values(by="probability", ascending=False)
+            results = pd.concat([results, sorted_preds])
 
         results.to_csv(os.path.join(path, f"chapter_predictions_{self.base_transformer.replace('/', '_')}.csv"), index=False)
+
+        if isinstance(self.trainer.logger, WandbLogger):
+            results2save = results.to_dict('tight')
+            data = results2save['data']
+            columns = results2save['columns']
+            self.trainer.logger.log_table(keys="Chapter predictions", columns=columns, data=data)
 
         return results
 
