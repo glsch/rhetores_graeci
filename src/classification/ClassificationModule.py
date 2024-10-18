@@ -129,7 +129,7 @@ class ClassificationModule(LightningModule):
         self.calibrated = False
         
     def on_test_start(self):
-        calibration_dataloader = self.trainer.datamodule.test_dataloader()
+        calibration_dataloader = self.trainer.datamodule.val_dataloader()
 
         with torch.inference_mode(False):
             self.train(mode=True)
@@ -164,16 +164,9 @@ class ClassificationModule(LightningModule):
         #logger.debug(f"Temperature-bias: {self.temperature[1]}")
 
         MulticlassCalibrationError.plot = _ce_plot
-        # ce = MulticlassCalibrationError(num_classes=self.num_labels, n_bins=20, ignore_index=-100)
-        # predictions = torch.softmax(all_logits, dim=1)
-        # ce.update(predictions, all_labels)
-
-        ce = MulticlassCalibrationError(num_classes=self.num_labels + 1, n_bins=20, ignore_index=-100)
-        probabilities = torch.softmax(all_logits, dim=1)
-        top_probs, top_indices = torch.max(probabilities, dim=1)
-        predictions = torch.where(top_probs > self.confidence_threshold, top_indices, self.num_labels)
-
-        ce.update(predictions, all_labels)
+        ce = MulticlassCalibrationError(num_classes=self.num_labels, n_bins=20, ignore_index=-100)
+        predictions = torch.softmax(all_logits, dim=1)
+        ce.update(torch.softmax(all_logits, dim=1), all_labels)
 
         if not self.trainer.state.stage == "predict":
            self.log("test/mce_bc", ce.compute(), logger=True, on_step=False, on_epoch=True)

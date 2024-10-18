@@ -399,11 +399,9 @@ class AncientGreekDataModule(LightningDataModule):
             self.test_dataset = dataset_cls(df=self.test_df, split="test", tokenizer=self.tokenizer)
 
         elif stage == "predict":
+            self.test_dataset = dataset_cls(df=self.test_df, split="test", tokenizer=self.tokenizer)
             self.val_dataset = dataset_cls(df=self.val_df, split="val", tokenizer=self.tokenizer)
             self.predict_dataset = dataset_cls(df=self.predict_df, split="predict", tokenizer=self.tokenizer)
-
-            print(self.predict_df["siglum"].unique().tolist())
-
 
     def get_sampler(self, stage="train"):
         stage2idx = {"train": 0, "val": 1, "test": 2}
