@@ -340,7 +340,7 @@ class ClassificationModule(LightningModule):
         predictions_df = pd.DataFrame(predictions_np)
         predictions_df['siglum'] = sigla_np
 
-        predictions_df.rename(columns={"0": "prediction"}, inplace=True)
+        predictions_df.rename(columns={0: "prediction"}, inplace=True)
 
         print(predictions_df)
 
