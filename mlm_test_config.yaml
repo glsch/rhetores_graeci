@@ -16,7 +16,7 @@ trainer:
       dir: null
       id: null
       anonymous: null
-      project: RhetoresGraeciMLM
+      project: RhetoresGraeciMLM_Test
       log_model: all
       experiment: null
       prefix: ''
