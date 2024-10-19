@@ -406,8 +406,6 @@ class ClassificationModule(LightningModule):
         # Assuming you have predictions_df and self.id2label available
         division_majority_vote = get_division_majority_vote(predictions_df, self.id2label)
 
-        print(division_majority_vote)
-
         majority_vote_df = get_ranked_predictions(predictions_df)
         majority_vote_df = majority_vote_df.assign(prediciton=majority_vote_df['prediction'].apply(lambda x: self.id2label[x]))
 
