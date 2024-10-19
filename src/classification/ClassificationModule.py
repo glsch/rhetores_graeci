@@ -342,7 +342,25 @@ class ClassificationModule(LightningModule):
 
         predictions_df.rename(columns={0: "prediction"}, inplace=True)
 
-        print(predictions_df)
+        def get_ranked_predictions(df):
+            # Group by siglum and prediction, count occurrences
+            grouped = df.groupby('siglum')['prediction'].value_counts().reset_index(name='count')
+
+            # Sort values and rank within each siglum group
+            grouped['rank'] = grouped.groupby('siglum')['count'].rank(method='dense', ascending=False)
+
+            # Sort by siglum and rank for cleaner output
+            sorted_groups = grouped.sort_values(['siglum', 'rank'])
+
+            # Create a dictionary to store ranked predictions for each siglum
+            ranked_predictions = {}
+
+            for siglum, group in sorted_groups.groupby('siglum'):
+                ranked_predictions[siglum] = group[['prediction', 'count', 'rank']].to_dict('records')
+
+            return ranked_predictions
+
+        print(get_ranked_predictions(predictions_df))
 
         df = pd.DataFrame(probs_np)
         df['siglum'] = sigla_np
