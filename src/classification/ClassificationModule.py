@@ -297,13 +297,13 @@ class ClassificationModule(LightningModule):
         with torch.no_grad():
             self.compute_metrics(stage="test")
 
-    # def on_predict_start(self):
-    #     calibration_dataloader = self.trainer.datamodule.val_dataloader()
-    #
-    #     with torch.inference_mode(False):
-    #         self.train(mode=True)
-    #         self.temperature[0].requires_grad = True
-    #         self.vector_calibration(calibration_dataloader)
+    def on_predict_start(self):
+        calibration_dataloader = self.trainer.datamodule.val_dataloader()
+
+        with torch.inference_mode(False):
+            self.train(mode=True)
+            self.temperature[0].requires_grad = True
+            self.vector_calibration(calibration_dataloader)
 
     def predict_step(self, batch) -> Any:
         outputs = self._process_batch(batch, stage="predict")
