@@ -331,8 +331,14 @@ class ClassificationModule(LightningModule):
 
         probabilities = torch.nn.functional.softmax(sorted_logits, dim=1)
 
+        predictions = torch.argmax(probabilities, dim=1)
+        predictions_np = predictions.cpu().numpy()
+
         sigla_np = sorted_sigla.cpu().numpy()
         probs_np = probabilities.cpu().numpy()
+
+        predictions_df = pd.DataFrame(predictions_np)
+        predictions_df['siglum'] = sigla_np
 
         df = pd.DataFrame(probs_np)
         df['siglum'] = sigla_np
@@ -356,41 +362,75 @@ class ClassificationModule(LightningModule):
 
         # chapters
         chap_df_melted = chap_df.melt(id_vars=['siglum'], var_name='class', value_name='probability')
-        chap_df_grouped = chap_df_melted.groupby(['siglum', 'class'])['probability'].mean().reset_index()
-        chap_df_final = chap_df_grouped.pivot(index='siglum', columns='class', values='probability').reset_index()
+        chap_df_grouped = chap_df_melted.groupby(['siglum', 'class']).agg({
+            'probability': 'mean',
+            'class': 'count'
+        }).reset_index()
+        chap_df_grouped = chap_df_grouped.rename(columns={'class': 'count', 'probability': 'mean_probability'})
 
-        chap_df_final.columns.name = None
-        chap_df_final = chap_df_final.rename(columns={col: self.id2label[col] for col in chap_df_final.columns if col != 'siglum'})
+        chap_df_final = chap_df_grouped.pivot(index='siglum', columns='class',
+                                              values=['mean_probability', 'count']).reset_index()
+        chap_df_final.columns = [f"{col[1]}_{col[0]}" if col[1] != "" else col[0] for col in chap_df_final.columns]
+
+        chap_df_final = chap_df_final.rename(
+            columns={f"{col}_mean_probability": self.id2label[int(col)] for col in self.id2label})
+        chap_df_final = chap_df_final.rename(
+            columns={f"{col}_count": f"{self.id2label[int(col)]}_count" for col in self.id2label})
 
         chap_results = pd.DataFrame()
         for chapter in chap_df_final["siglum"].unique().tolist():
-            sorted_preds = chap_df_final[chap_df_final["siglum"] == chapter].melt(id_vars=["siglum"], var_name="class",
-                                                                        value_name="probability").sort_values(
-                by="probability", ascending=False)
-            chap_results = pd.concat([chap_results, sorted_preds])
+            chapter_data = chap_df_final[chap_df_final["siglum"] == chapter]
+            prob_cols = [col for col in chapter_data.columns if "count" not in col and col != "siglum"]
+            count_cols = [col for col in chapter_data.columns if "count" in col]
+
+            prob_data = chapter_data[prob_cols].melt(var_name="class", value_name="probability")
+            count_data = chapter_data[count_cols].melt(var_name="class_count", value_name="count")
+            count_data["class"] = count_data["class_count"].str.replace("_count", "")
+
+            merged_data = pd.merge(prob_data, count_data[["class", "count"]], on="class")
+            merged_data["siglum"] = chapter
+            merged_data = merged_data.sort_values(by="probability", ascending=False)
+
+            chap_results = pd.concat([chap_results, merged_data])
 
         chap_results.to_csv(os.path.join(path, f"chapter_predictions_{self.base_transformer.replace('/', '_')}.csv"),
-                       index=False)
-
+                            index=False)
 
         # logical divisions of the AR
         div_df_melted = div_df.melt(id_vars=['division'], var_name='class', value_name='probability')
-        div_df_grouped = div_df_melted.groupby(['division', 'class'])['probability'].mean().reset_index()
-        div_df_final = div_df_grouped.pivot(index='division', columns='class', values='probability').reset_index()
+        div_df_grouped = div_df_melted.groupby(['division', 'class']).agg({
+            'probability': 'mean',
+            'class': 'count'
+        }).reset_index()
+        div_df_grouped = div_df_grouped.rename(columns={'class': 'count', 'probability': 'mean_probability'})
 
-        div_df_final.columns.name = None
+        div_df_final = div_df_grouped.pivot(index='division', columns='class',
+                                            values=['mean_probability', 'count']).reset_index()
+        div_df_final.columns = [f"{col[1]}_{col[0]}" if col[1] != "" else col[0] for col in div_df_final.columns]
+
         div_df_final = div_df_final.rename(
-            columns={col: self.id2label[col] for col in div_df_final.columns if col != 'division'})
+            columns={f"{col}_mean_probability": self.id2label[int(col)] for col in self.id2label})
+        div_df_final = div_df_final.rename(
+            columns={f"{col}_count": f"{self.id2label[int(col)]}_count" for col in self.id2label})
 
         div_results = pd.DataFrame()
         for division in div_df_final["division"].unique().tolist():
-            sorted_preds = div_df_final[div_df_final["division"] == division].melt(id_vars=["division"], var_name="class",
-                                                                                  value_name="probability").sort_values(
-                by="probability", ascending=False)
-            div_results = pd.concat([div_results, sorted_preds])
+            division_data = div_df_final[div_df_final["division"] == division]
+            prob_cols = [col for col in division_data.columns if "count" not in col and col != "division"]
+            count_cols = [col for col in division_data.columns if "count" in col]
 
-        div_results.to_csv(os.path.join(path, f"logical_parts_predictions_{self.base_transformer.replace('/', '_')}.csv"),
-                       index=False)
+            prob_data = division_data[prob_cols].melt(var_name="class", value_name="probability")
+            count_data = division_data[count_cols].melt(var_name="class_count", value_name="count")
+            count_data["class"] = count_data["class_count"].str.replace("_count", "")
+
+            merged_data = pd.merge(prob_data, count_data[["class", "count"]], on="class")
+            merged_data["division"] = division
+            merged_data = merged_data.sort_values(by="probability", ascending=False)
+
+            div_results = pd.concat([div_results, merged_data])
+
+        div_results.to_csv(
+            os.path.join(path, f"logical_parts_predictions_{self.base_transformer.replace('/', '_')}.csv"), index=False)
 
         if isinstance(self.trainer.logger, WandbLogger):
             results2save = chap_results.to_dict('tight')
@@ -404,6 +444,103 @@ class ClassificationModule(LightningModule):
             columns = results2save['columns']
             logical_parts_table = wandb.Table(columns=columns, data=data)
             self.trainer.logger.experiment.log({"Logical parts predictions": logical_parts_table})
+
+    # def get_per_chapter_stats(self, stage="predict"):
+    #     path = self.trainer.logger.experiment.dir
+    #
+    #     if path is None:
+    #         path = self.trainer.default_root_dir
+    #
+    #     save_dir = self.trainer.logger.save_dir if self.trainer.logger.save_dir is not None else self.trainer.default_root_dir
+    #     logger.debug(f"ClassificationModule.compute_metrics() -- Saving the plot to {save_dir}")
+    #
+    #     all_logits = torch.cat(self.epoch_outputs[stage], dim=0).cpu().detach()
+    #     all_sigla = torch.cat(self.sigla, dim=0).cpu().detach()
+    #
+    #     sorted_sigla, indices = torch.sort(all_sigla, dim=0)
+    #     sorted_logits = all_logits[indices]
+    #
+    #     probabilities = torch.nn.functional.softmax(sorted_logits, dim=1)
+    #
+    #     predictions = torch.argmax(probabilities, dim=1)
+    #     predictions_np = predictions.cpu().numpy()
+    #
+    #     sigla_np = sorted_sigla.cpu().numpy()
+    #     probs_np = probabilities.cpu().numpy()
+    #
+    #     predictions_df = pd.DataFrame(predictions_np)
+    #     predictions_df['siglum'] = sigla_np
+    #
+    #     df = pd.DataFrame(probs_np)
+    #     df['siglum'] = sigla_np
+    #
+    #     def chapter2div(siglum):
+    #         if siglum in [1, 7]:
+    #             return "1 & 7"
+    #         if siglum in [2, 3, 4]:
+    #             return "2-4"
+    #         if siglum in [5, 6]:
+    #             return "5 & 6"
+    #         return -100
+    #
+    #     df = df.assign(division=df['siglum'].apply(lambda x: chapter2div(x)))
+    #     chap_df = copy.deepcopy(df)
+    #     chap_df.drop(columns=["division"], inplace=True)
+    #
+    #     div_df = copy.deepcopy(df)
+    #     div_df.drop(columns=["siglum"], inplace=True)
+    #     div_df = div_df[div_df["division"] != -100]
+    #
+    #     # chapters
+    #     chap_df_melted = chap_df.melt(id_vars=['siglum'], var_name='class', value_name='probability')
+    #     chap_df_grouped = chap_df_melted.groupby(['siglum', 'class'])['probability'].mean().reset_index()
+    #     chap_df_final = chap_df_grouped.pivot(index='siglum', columns='class', values='probability').reset_index()
+    #
+    #     chap_df_final.columns.name = None
+    #     chap_df_final = chap_df_final.rename(columns={col: self.id2label[col] for col in chap_df_final.columns if col != 'siglum'})
+    #
+    #     chap_results = pd.DataFrame()
+    #     for chapter in chap_df_final["siglum"].unique().tolist():
+    #         sorted_preds = chap_df_final[chap_df_final["siglum"] == chapter].melt(id_vars=["siglum"], var_name="class",
+    #                                                                     value_name="probability").sort_values(
+    #             by="probability", ascending=False)
+    #         chap_results = pd.concat([chap_results, sorted_preds])
+    #
+    #     chap_results.to_csv(os.path.join(path, f"chapter_predictions_{self.base_transformer.replace('/', '_')}.csv"),
+    #                    index=False)
+    #
+    #
+    #     # logical divisions of the AR
+    #     div_df_melted = div_df.melt(id_vars=['division'], var_name='class', value_name='probability')
+    #     div_df_grouped = div_df_melted.groupby(['division', 'class'])['probability'].mean().reset_index()
+    #     div_df_final = div_df_grouped.pivot(index='division', columns='class', values='probability').reset_index()
+    #
+    #     div_df_final.columns.name = None
+    #     div_df_final = div_df_final.rename(
+    #         columns={col: self.id2label[col] for col in div_df_final.columns if col != 'division'})
+    #
+    #     div_results = pd.DataFrame()
+    #     for division in div_df_final["division"].unique().tolist():
+    #         sorted_preds = div_df_final[div_df_final["division"] == division].melt(id_vars=["division"], var_name="class",
+    #                                                                               value_name="probability").sort_values(
+    #             by="probability", ascending=False)
+    #         div_results = pd.concat([div_results, sorted_preds])
+    #
+    #     div_results.to_csv(os.path.join(path, f"logical_parts_predictions_{self.base_transformer.replace('/', '_')}.csv"),
+    #                    index=False)
+    #
+    #     if isinstance(self.trainer.logger, WandbLogger):
+    #         results2save = chap_results.to_dict('tight')
+    #         data = results2save['data']
+    #         columns = results2save['columns']
+    #         chapter_table = wandb.Table(columns=columns, data=data)
+    #         self.trainer.logger.experiment.log({"Chapter predictions": chapter_table})
+    #
+    #         results2save = div_results.to_dict('tight')
+    #         data = results2save['data']
+    #         columns = results2save['columns']
+    #         logical_parts_table = wandb.Table(columns=columns, data=data)
+    #         self.trainer.logger.experiment.log({"Logical parts predictions": logical_parts_table})
 
 
     def configure_optimizers(self):
