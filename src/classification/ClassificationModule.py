@@ -463,6 +463,13 @@ class ClassificationModule(LightningModule):
                        index=False)
 
         if isinstance(self.trainer.logger, WandbLogger):
+            results2save = division_majority_vote.to_dict('tight')
+            data = results2save['data']
+            columns = results2save['columns']
+            chapter_table = wandb.Table(columns=columns, data=data)
+            self.trainer.logger.experiment.log({"Logical parts majority prediction": chapter_table})
+
+
             results2save = majority_vote_df.to_dict('tight')
             data = results2save['data']
             columns = results2save['columns']
