@@ -346,6 +346,12 @@ class ClassificationModule(LightningModule):
             # Group by siglum and prediction, count occurrences
             grouped = df.groupby('siglum')['prediction'].value_counts().reset_index(name='count')
 
+            # Calculate total count per siglum
+            total_counts = grouped.groupby('siglum')['count'].transform('sum')
+
+            # Calculate share (percentage) of each prediction within its siglum
+            grouped['share'] = grouped['count'] / total_counts * 100
+
             # Sort values and rank within each siglum group
             grouped['rank'] = grouped.groupby('siglum')['count'].rank(method='dense', ascending=False)
 
@@ -356,7 +362,7 @@ class ClassificationModule(LightningModule):
             ranked_predictions = {}
 
             for siglum, group in sorted_groups.groupby('siglum'):
-                ranked_predictions[siglum] = group[['prediction', 'count', 'rank']].to_dict('records')
+                ranked_predictions[siglum] = group[['prediction', 'count', 'share', 'rank']].to_dict('records')
 
             return ranked_predictions
 
