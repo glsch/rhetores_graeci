@@ -560,10 +560,10 @@ class ClassificationModule(LightningModule):
         self.trainer.logger.log_image(f"confusion_matrix_{stage}", images=[img_path], step=self.current_epoch)
 
         # log everything
-        self.log(f"{stage}/f1", mcls_f1.compute(), logger=True, on_epoch=True)
+        self.log(f"{stage}/f1", mcls_f1.compute().mean(), logger=True, on_epoch=True)
         self.log(f"{stage}/accuracy", accuracy, logger=True, on_epoch=True)
         self.log(f"{stage}/precision", precision, logger=True, on_epoch=True)
-        self.log(f"{stage}/recall", mcls_recall.compute(), logger=True, on_epoch=True)
+        self.log(f"{stage}/recall", mcls_recall.compute().mean(), logger=True, on_epoch=True)
 
         self.epoch_outputs[stage] = []
         self.epoch_labels[stage] = []
