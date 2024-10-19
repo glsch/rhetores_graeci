@@ -700,6 +700,40 @@ class ClassificationModule(LightningModule):
 
         return predictions
 
+    def modify_tensor_with_threshold(self, logits, confidence_threshold: float = None, strategy=RejectionMethod.DIFFERENCE):
+        if confidence_threshold is None:
+            confidence_threshold = self.confidence_threshold
+
+        batch_size, num_classes = logits.shape
+        device = logits.device
+
+        # Create a new tensor with an additional class
+        predictions_with_rejection = torch.zeros(batch_size, num_classes + 1, device=device)
+
+        # Copy the original data to the new tensor
+        predictions_with_rejection[:, :num_classes] = logits
+
+        if strategy == RejectionMethod.THRESHOLD:
+            # Check if any class is above the threshold for each sample in the batch
+            above_threshold = (logits > confidence_threshold).any(dim=1)
+        elif strategy == RejectionMethod.DIFFERENCE:
+            # Get the top two values for each sample
+            top2_values, _ = torch.topk(logits, k=2, dim=1)
+
+            # Calculate the difference between top1 and top2
+            diff = top2_values[:, 0] - top2_values[:, 1]
+
+            # Check if the difference is above the threshold for each sample
+            above_threshold = diff > confidence_threshold
+        else:
+            raise ValueError("Invalid threshold strategy. Use ThresholdStrategy.FIXED or ThresholdStrategy.TOP_DIFF")
+
+        # Where condition is not met, set all original classes to 0 and new class to 1
+        predictions_with_rejection[~above_threshold, :num_classes] = 0
+        predictions_with_rejection[~above_threshold, -1] = 1
+
+        return predictions_with_rejection
+
     # def tune_threshold(self, validation_logits, validation_targets, num_thresholds=100):
     #     logger.info("Tuning confidence threshold...")
     #     thresholds = np.linspace(0, 1, num_thresholds)
