@@ -364,18 +364,18 @@ class ClassificationModule(LightningModule):
         chap_df_melted = chap_df.melt(id_vars=['siglum'], var_name='class', value_name='probability')
         chap_df_grouped = chap_df_melted.groupby(['siglum', 'class']).agg({
             'probability': 'mean',
-            'class': 'count'
+            'probability': 'count'  # Use 'probability' instead of 'class' for counting
         }).reset_index()
-        chap_df_grouped = chap_df_grouped.rename(columns={'class': 'count', 'probability': 'mean_probability'})
+        chap_df_grouped = chap_df_grouped.rename(columns={'probability': 'mean_probability', 'count': 'sample_count'})
 
         chap_df_final = chap_df_grouped.pivot(index='siglum', columns='class',
-                                              values=['mean_probability', 'count']).reset_index()
+                                              values=['mean_probability', 'sample_count']).reset_index()
         chap_df_final.columns = [f"{col[1]}_{col[0]}" if col[1] != "" else col[0] for col in chap_df_final.columns]
 
         chap_df_final = chap_df_final.rename(
             columns={f"{col}_mean_probability": self.id2label[int(col)] for col in self.id2label})
         chap_df_final = chap_df_final.rename(
-            columns={f"{col}_count": f"{self.id2label[int(col)]}_count" for col in self.id2label})
+            columns={f"{col}_sample_count": f"{self.id2label[int(col)]}_count" for col in self.id2label})
 
         chap_results = pd.DataFrame()
         for chapter in chap_df_final["siglum"].unique().tolist():
@@ -400,18 +400,18 @@ class ClassificationModule(LightningModule):
         div_df_melted = div_df.melt(id_vars=['division'], var_name='class', value_name='probability')
         div_df_grouped = div_df_melted.groupby(['division', 'class']).agg({
             'probability': 'mean',
-            'class': 'count'
+            'probability': 'count'  # Use 'probability' instead of 'class' for counting
         }).reset_index()
-        div_df_grouped = div_df_grouped.rename(columns={'class': 'count', 'probability': 'mean_probability'})
+        div_df_grouped = div_df_grouped.rename(columns={'probability': 'mean_probability', 'count': 'sample_count'})
 
         div_df_final = div_df_grouped.pivot(index='division', columns='class',
-                                            values=['mean_probability', 'count']).reset_index()
+                                            values=['mean_probability', 'sample_count']).reset_index()
         div_df_final.columns = [f"{col[1]}_{col[0]}" if col[1] != "" else col[0] for col in div_df_final.columns]
 
         div_df_final = div_df_final.rename(
             columns={f"{col}_mean_probability": self.id2label[int(col)] for col in self.id2label})
         div_df_final = div_df_final.rename(
-            columns={f"{col}_count": f"{self.id2label[int(col)]}_count" for col in self.id2label})
+            columns={f"{col}_sample_count": f"{self.id2label[int(col)]}_count" for col in self.id2label})
 
         div_results = pd.DataFrame()
         for division in div_df_final["division"].unique().tolist():
