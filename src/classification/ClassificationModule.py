@@ -369,7 +369,7 @@ class ClassificationModule(LightningModule):
                 return "2-4"
             if siglum in [5, 6]:
                 return "5 & 6"
-            return -100
+            return "Other"
 
         def get_division_majority_vote(predictions_df, id2label):
             # Get ranked predictions by siglum
@@ -383,7 +383,7 @@ class ClassificationModule(LightningModule):
             majority_vote_df = majority_vote_df.assign(
                 division=majority_vote_df['siglum'].apply(lambda x: chapter2div(x)))
 
-            majority_vote_df = majority_vote_df[majority_vote_df["division"] != -100]
+            majority_vote_df = majority_vote_df[majority_vote_df["division"] != "Other"]
 
             # Group by division and prediction, summing the counts
             division_grouped = majority_vote_df.groupby(['division', 'prediction'])['count'].sum().reset_index()
@@ -422,7 +422,7 @@ class ClassificationModule(LightningModule):
 
         div_df = copy.deepcopy(df)
         div_df.drop(columns=["siglum"], inplace=True)
-        div_df = div_df[div_df["division"] != -100]
+        div_df = div_df[div_df["division"] != "Other"]
 
         # chapters
         chap_df_melted = chap_df.melt(id_vars=['siglum'], var_name='class', value_name='probability')
