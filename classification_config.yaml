@@ -140,6 +140,7 @@ model:
     init_w: 1.0
     init_b: 1.0
     confidence_threshold: 0.25
+    freeze: false
 data:
   model_class: transformers.AutoModelForSequenceClassification
   base_transformer: bowphs/GreBerta

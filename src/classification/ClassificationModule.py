@@ -104,6 +104,7 @@ class ClassificationModule(LightningModule):
             init_w: float = 1.0,
             init_b: float = 0.0,
             confidence_threshold: NonNegativeFloat = 0.25,
+            freeze: bool = False,
     ):
         super().__init__()
         self.task = task
@@ -122,6 +123,18 @@ class ClassificationModule(LightningModule):
         self.base_transformer = base_transformer
 
         self.model = self.model_class.from_pretrained(token=os.getenv("HF_TOKEN", None), pretrained_model_name_or_path=self.base_transformer, num_labels=self.num_labels, id2label=self.id2label, label2id={v: k for k, v in self.id2label.items()})
+
+        if freeze:
+            transformer2freeze = None
+            if self.model.config.model_type == "roberta":
+                transformer2freeze = self.model.roberta
+            elif self.model.config.model_type == "bert":
+                transformer2freeze = self.model.bert
+            else:
+                raise NotImplementedError(f"Freezing not implemented for {self.model.config.model_type}")
+
+            for param in transformer2freeze.parameters():
+                param.requires_grad = False
 
         self.save_hyperparameters(ignore=["base_transformer", "model_class", "task", "tokenizer"])
 
