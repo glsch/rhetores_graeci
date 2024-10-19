@@ -347,6 +347,9 @@ class AncientGreekDataModule(LightningDataModule):
         #    self.dataset = self.dataset[~self.dataset["author_id"].isin(prohibited_ids)]
         #    self.dataset = self.dataset[~((self.dataset["author_id"] == 81) & (self.dataset["work_id"] == 16))]
 
+        if self.task == "mlm":
+           self.dataset = self.dataset[self.dataset["author_id"].isin(self.study_author_ids + self.unk_author_ids)]
+
         else:
             logger.info(f"AncientGreekDataModule.setup() -- Dataset already loaded")
 
