@@ -316,8 +316,8 @@ class AncientGreekDataModule(LightningDataModule):
                 logger.info(f"AncientGreekDataModule.prepare_data() -- Number of authors full dataset: {self.dataset['author_id'].unique().tolist()}")
                 logger.info(f"AncientGreekDataModule.prepare_data() -- Number of authors train df: {train_df['author_id'].unique().tolist()}")
                 logger.info(f"AncientGreekDataModule.prepare_data() -- Number of authors unk_df: {unk_df['author_id'].unique().tolist()}")
-                logger.info(f"AncientGreekDataModule.prepare_data() -- Unknown samples: {unk_df[unk_df['target'] == '<UNK>'].size()}")
-                logger.info(f"AncientGreekDataModule.prepare_data() -- Known samples: {unk_df[unk_df['target'] != '<UNK>'].size()}")
+                logger.info(f"AncientGreekDataModule.prepare_data() -- Unknown samples: {unk_df[unk_df['target'] == '<UNK>'].shape[0]}")
+                logger.info(f"AncientGreekDataModule.prepare_data() -- Known samples: {unk_df[unk_df['target'] != '<UNK>'].shape[0]}")
 
                 logger.info(f"AncientGreekDataModule.prepare_data() -- Number of authors val_df: {val_df['author_id'].unique().tolist()}")
 
