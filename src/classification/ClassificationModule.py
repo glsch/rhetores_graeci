@@ -105,7 +105,7 @@ class ClassificationModule(LightningModule):
             init_b: float = 0.0,
             confidence_threshold: NonNegativeFloat = 0.25,
             freeze: bool = False,
-            test_with_unseen: bool = True,
+            test_with_unseen: bool = False,
     ):
         super().__init__()
         self.task = task
@@ -114,6 +114,7 @@ class ClassificationModule(LightningModule):
         self.num_labels = num_labels
         self.id2label = id2label
         self.rejection_method = rejection_method
+        self.test_with_unseen = test_with_unseen
 
         self.push_to_hub = push_to_hub
 
@@ -477,7 +478,7 @@ class ClassificationModule(LightningModule):
         ignore_index = -100
         class_labels = [self.id2label[i] for i in range(len(self.id2label))]
         # if we are testing, we need to preserve the "<UNK>" label
-        if stage in ("test"):
+        if stage in ("test") and self.test_with_unseen:
             ignore_index = None
             class_labels = [self.id2label[i] for i in range(len(self.id2label))] + ["<UNK>"]
             all_labels[all_labels == -100] = self.num_labels
@@ -658,6 +659,7 @@ class ClassificationModule(LightningModule):
     def make_predictions(self, logits, target=None, stage="train", confidence_threshold: float = None):
         if confidence_threshold is None:
             confidence_threshold = self.confidence_threshold
+
         logger.debug(f"ClassificationModule.make_predictions() -- Making predictions")
         # since metrics do not allow to have -1 as a label, we need to replace it with the number of heads,
         # which always equals to the max index in self.heads + 1
@@ -672,7 +674,7 @@ class ClassificationModule(LightningModule):
         probabilities = torch.nn.functional.softmax(logits, dim=1)
         logger.debug(f"ClassificationModule.make_predictions() -- Probabilities: {probabilities}")
 
-        if not stage in ("test", "predict"):
+        if (not stage in ("test", "predict") or (stage == "test" and not self.test_with_unseen)):
             return torch.argmax(probabilities, dim=1)
 
         # if the difference between the top two probabilities is less than the threshold,
