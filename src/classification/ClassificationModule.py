@@ -105,6 +105,7 @@ class ClassificationModule(LightningModule):
             init_b: float = 0.0,
             confidence_threshold: NonNegativeFloat = 0.25,
             freeze: bool = False,
+            test_with_unseen: bool = True,
     ):
         super().__init__()
         self.task = task
