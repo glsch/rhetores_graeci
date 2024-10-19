@@ -700,7 +700,7 @@ class ClassificationModule(LightningModule):
 
         return predictions
 
-    def modify_tensor_with_threshold(self, logits, confidence_threshold: float = None, strategy=RejectionMethod.DIFFERENCE):
+    def predictions_with_threshold(self, logits, confidence_threshold: float = None, strategy=RejectionMethod.DIFFERENCE):
         if confidence_threshold is None:
             confidence_threshold = self.confidence_threshold
 
