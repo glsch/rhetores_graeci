@@ -289,8 +289,6 @@ class AncientGreekDataModule(LightningDataModule):
                 encoded_labels, unique = pd.factorize(self.dataset["target"])
                 self.dataset = self.dataset.assign(label=encoded_labels)
 
-
-
                 # # all minor authors go to UNK, which will only be in the test set
                 # # therefore, we can create the base of this dataset
                 # unk_df = self.dataset[self.dataset["author_id"].isin(self.unk_author_ids)]
