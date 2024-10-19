@@ -41,7 +41,7 @@ class RhetoresGraecigCli(LightningCLI):
             "class_path": "lightning.pytorch.loggers.WandbLogger",
             'init_args': {
                 "project": "RhetoresGraeci",
-                "log_model": "all"
+                # "log_model": "all"
             },
         }
 
