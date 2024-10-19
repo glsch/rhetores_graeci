@@ -285,37 +285,33 @@ class AncientGreekDataModule(LightningDataModule):
 
                 self.dataset = self.dataset[~self.dataset["unique_id"].isin(predict_df["unique_id"])]
 
-                self.dataset = self.dataset.assign(target=lambda x: x["target"] if not x["author_id"] in self.unk_author_ids else "<UNK>")
-                encoded_labels, unique = pd.factorize(self.dataset["target"])
-                self.dataset = self.dataset.assign(label=encoded_labels)
+                # all minor authors go to UNK, which will only be in the test set
+                # therefore, we can create the base of this dataset
+                unk_df = self.dataset[self.dataset["author_id"].isin(self.unk_author_ids)]
+                unk_df = unk_df.assign(split="test")
 
-                # # all minor authors go to UNK, which will only be in the test set
-                # # therefore, we can create the base of this dataset
-                # unk_df = self.dataset[self.dataset["author_id"].isin(self.unk_author_ids)]
-                # unk_df = unk_df.assign(split="test")
-                #
-                # # the rest is used for training and validation
-                # self.dataset = self.dataset[~self.dataset["author_id"].isin(self.unk_author_ids)]
+                # the rest is used for training and validation
+                self.dataset = self.dataset[~self.dataset["author_id"].isin(self.unk_author_ids)]
 
-                train_df = self.dataset.groupby("target").sample(frac=.75)
+                train_df = self.dataset.groupby("author_id").sample(frac=.75)
                 train_df = train_df.assign(split="train")
 
                 val_df = self.dataset[~self.dataset["unique_id"].isin(train_df["unique_id"])]
-                test_df = val_df.groupby("target").sample(frac=.5)
+                test_df = val_df.groupby("author_id").sample(frac=.5)
                 val_df = val_df[~val_df["unique_id"].isin(test_df["unique_id"])]
                 val_df = val_df.assign(split="val")
                 test_df = test_df.assign(split="test")
 
                 logger.info("AncientGreekDataModule.prepare_data() -- Creating dataset")
                 self.dataset = pd.concat([train_df, val_df, test_df])
-                # encoded_labels, unique = pd.factorize(self.dataset["author_id"])
-                # max_label = max(encoded_labels)
-                # unk = max_label + 1
-                # self.dataset = self.dataset.assign(label=encoded_labels)
-                # unk_df = unk_df.assign(target="<UNK>")
-                # unk_df = unk_df.assign(label=-100)
+                encoded_labels, unique = pd.factorize(self.dataset["author_id"])
+                max_label = max(encoded_labels)
+                unk = max_label + 1
+                self.dataset = self.dataset.assign(label=encoded_labels)
+                unk_df = unk_df.assign(target="<UNK>")
+                unk_df = unk_df.assign(label=-100)
                 predict_df = predict_df.assign(label=-100)
-                self.dataset = pd.concat([self.dataset, predict_df])
+                self.dataset = pd.concat([self.dataset, unk_df, predict_df])
 
                 logger.info(f"AncientGreekDataModule.prepare_data() -- Number of authors full dataset: {self.dataset['author_id'].unique().tolist()}")
                 logger.info(f"AncientGreekDataModule.prepare_data() -- Number of authors train df: {train_df['author_id'].unique().tolist()}")
