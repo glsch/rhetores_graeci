@@ -383,6 +383,8 @@ class ClassificationModule(LightningModule):
             majority_vote_df = majority_vote_df.assign(
                 division=majority_vote_df['siglum'].apply(lambda x: chapter2div(x)))
 
+            majority_vote_df = majority_vote_df[majority_vote_df["division"] != -100]
+
             # Group by division and prediction, summing the counts
             division_grouped = majority_vote_df.groupby(['division', 'prediction'])['count'].sum().reset_index()
 
