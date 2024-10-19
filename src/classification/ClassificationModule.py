@@ -20,7 +20,7 @@ from torchmetrics.utilities.data import dim_zero_cat
 from torchmetrics.utilities.plot import _AX_TYPE, _PLOT_OUT_TYPE
 
 from torchmetrics.functional.classification import (multiclass_f1_score, multiclass_recall, multiclass_accuracy, multiclass_precision, multiclass_confusion_matrix)
-from torchmetrics.classification import MulticlassF1Score, MulticlassCalibrationError
+from torchmetrics.classification import MulticlassF1Score, MulticlassCalibrationError, MulticlassRecall
 from torch.nn import CrossEntropyLoss
 from lightning.pytorch.loggers.wandb import WandbLogger
 import wandb
@@ -495,7 +495,9 @@ class ClassificationModule(LightningModule):
 
         # todo: consider adding others, too
         mcls_f1 = MulticlassF1Score(num_classes=len(class_labels), ignore_index=ignore_index, average=None)
+        mcls_recall = MulticlassRecall(num_classes=len(class_labels), ignore_index=ignore_index)
         mcls_f1.update(predictions, labels)
+        mcls_recall.update(predictions, labels)
 
         # plot F1 per class barchart
         # sorting by F1 score (?)
@@ -558,15 +560,16 @@ class ClassificationModule(LightningModule):
         self.trainer.logger.log_image(f"confusion_matrix_{stage}", images=[img_path], step=self.current_epoch)
 
         # log everything
-        self.log(f"{stage}/f1", f1, logger=True, on_epoch=True)
+        self.log(f"{stage}/f1", mcls_f1.compute(), logger=True, on_epoch=True)
         self.log(f"{stage}/accuracy", accuracy, logger=True, on_epoch=True)
         self.log(f"{stage}/precision", precision, logger=True, on_epoch=True)
-        self.log(f"{stage}/recall", recall, logger=True, on_epoch=True)
+        self.log(f"{stage}/recall", mcls_recall.compute(), logger=True, on_epoch=True)
 
         self.epoch_outputs[stage] = []
         self.epoch_labels[stage] = []
         # reset MulticlassF1Score
         mcls_f1.reset()
+        mcls_recall.reset()
 
     def set_temperature(self, val_w: float, val_b: float) -> None:
         """Set the temperature to a fixed value.
