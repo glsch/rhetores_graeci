@@ -362,11 +362,16 @@ class ClassificationModule(LightningModule):
 
         # chapters
         chap_df_melted = chap_df.melt(id_vars=['siglum'], var_name='class', value_name='probability')
-        chap_df_grouped = chap_df_melted.groupby(['siglum', 'class']).agg({
-            'probability': 'mean',
-            'probability': 'count'  # Use 'probability' instead of 'class' for counting
-        }).reset_index()
-        chap_df_grouped = chap_df_grouped.rename(columns={'probability': 'mean_probability', 'count': 'sample_count'})
+
+        # Calculate mean probabilities
+        chap_df_mean = chap_df_melted.groupby(['siglum', 'class'])['probability'].mean().reset_index()
+        chap_df_mean = chap_df_mean.rename(columns={'probability': 'mean_probability'})
+
+        # Calculate counts (majority vote)
+        chap_df_count = chap_df_melted.groupby(['siglum', 'class']).size().reset_index(name='sample_count')
+
+        # Merge mean and count dataframes
+        chap_df_grouped = pd.merge(chap_df_mean, chap_df_count, on=['siglum', 'class'])
 
         chap_df_final = chap_df_grouped.pivot(index='siglum', columns='class',
                                               values=['mean_probability', 'sample_count']).reset_index()
@@ -398,11 +403,16 @@ class ClassificationModule(LightningModule):
 
         # logical divisions of the AR
         div_df_melted = div_df.melt(id_vars=['division'], var_name='class', value_name='probability')
-        div_df_grouped = div_df_melted.groupby(['division', 'class']).agg({
-            'probability': 'mean',
-            'probability': 'count'  # Use 'probability' instead of 'class' for counting
-        }).reset_index()
-        div_df_grouped = div_df_grouped.rename(columns={'probability': 'mean_probability', 'count': 'sample_count'})
+
+        # Calculate mean probabilities
+        div_df_mean = div_df_melted.groupby(['division', 'class'])['probability'].mean().reset_index()
+        div_df_mean = div_df_mean.rename(columns={'probability': 'mean_probability'})
+
+        # Calculate counts (majority vote)
+        div_df_count = div_df_melted.groupby(['division', 'class']).size().reset_index(name='sample_count')
+
+        # Merge mean and count dataframes
+        div_df_grouped = pd.merge(div_df_mean, div_df_count, on=['division', 'class'])
 
         div_df_final = div_df_grouped.pivot(index='division', columns='class',
                                             values=['mean_probability', 'sample_count']).reset_index()
