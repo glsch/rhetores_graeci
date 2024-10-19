@@ -359,17 +359,8 @@ class ClassificationModule(LightningModule):
             sorted_groups = grouped.sort_values(['siglum', 'rank'])
 
             # Create a dictionary to store ranked predictions for each siglum
-            ranked_predictions = {}
 
-            for siglum, group in sorted_groups.groupby('siglum'):
-                ranked_predictions[siglum] = group[['prediction', 'count', 'share', 'rank']].to_dict('records')
-
-            return ranked_predictions
-
-        print(get_ranked_predictions(predictions_df))
-
-        df = pd.DataFrame(probs_np)
-        df['siglum'] = sigla_np
+            return sorted_groups
 
         def chapter2div(siglum):
             if siglum in [1, 7]:
@@ -379,6 +370,49 @@ class ClassificationModule(LightningModule):
             if siglum in [5, 6]:
                 return "5 & 6"
             return -100
+
+        def get_division_majority_vote(predictions_df, id2label):
+            # Get ranked predictions by siglum
+            majority_vote_df = get_ranked_predictions(predictions_df)
+
+            # Convert prediction to label
+            majority_vote_df = majority_vote_df.assign(
+                prediction=majority_vote_df['prediction'].apply(lambda x: id2label[x]))
+
+            # Assign division
+            majority_vote_df = majority_vote_df.assign(
+                division=majority_vote_df['siglum'].apply(lambda x: chapter2div(x)))
+
+            # Group by division and prediction, summing the counts
+            division_grouped = majority_vote_df.groupby(['division', 'prediction'])['count'].sum().reset_index()
+
+            # Calculate total count per division
+            division_total_counts = division_grouped.groupby('division')['count'].transform('sum')
+
+            # Calculate share (percentage) of each prediction within its division
+            division_grouped['share'] = division_grouped['count'] / division_total_counts * 100
+
+            # Sort values and rank within each division group
+            division_grouped['rank'] = division_grouped.groupby('division')['count'].rank(method='dense',
+                                                                                          ascending=False)
+
+            # Sort by division and rank for cleaner output
+            division_results = division_grouped.sort_values(['division', 'rank'])
+
+            return division_results
+
+        # Assuming you have predictions_df and self.id2label available
+        division_majority_vote = get_division_majority_vote(predictions_df, self.id2label)
+
+        print(division_majority_vote)
+
+        majority_vote_df = get_ranked_predictions(predictions_df)
+        majority_vote_df = majority_vote_df.assign(prediciton=majority_vote_df['prediction'].apply(lambda x: self.id2label[x]))
+
+        majority_vote_df = majority_vote_df.assign(division=majority_vote_df['siglum'].apply(lambda x: chapter2div(x)))
+
+        df = pd.DataFrame(probs_np)
+        df['siglum'] = sigla_np
 
         df = df.assign(division=df['siglum'].apply(lambda x: chapter2div(x)))
         chap_df = copy.deepcopy(df)
@@ -427,6 +461,13 @@ class ClassificationModule(LightningModule):
                        index=False)
 
         if isinstance(self.trainer.logger, WandbLogger):
+            results2save = majority_vote_df.to_dict('tight')
+            data = results2save['data']
+            columns = results2save['columns']
+            chapter_table = wandb.Table(columns=columns, data=data)
+            self.trainer.logger.experiment.log({"Majority vote chapter predictions": chapter_table})
+
+
             results2save = chap_results.to_dict('tight')
             data = results2save['data']
             columns = results2save['columns']
