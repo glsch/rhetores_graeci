@@ -134,12 +134,12 @@ model:
         differentiable: false
         fused: null
     scheduler_type: LINEAR
-    rejection_method: DIFFERENCE
+    rejection_method: THRESHOLD
     num_warmup_steps: 0
     push_to_hub: false
     init_w: 1.0
     init_b: 1.0
-    confidence_threshold: 0.25
+    confidence_threshold: 0.8
     freeze: false
     test_with_unseen: false
 data:
@@ -149,9 +149,9 @@ data:
   - Rhet.
   - Orat.
   chunk_type: CHUNK
-  batch_size: 1
+  batch_size: 48
   num_workers: 0
   persistent_workers: false
-  chunk_length: 128
-  overlap: 0.0
+  chunk_length: 64
+  overlap: 0.5
 ckpt_path: null

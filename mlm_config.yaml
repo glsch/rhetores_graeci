@@ -142,8 +142,8 @@ data:
   epithets:
   - Rhet.
   - Orat.
-  chunk_type: SENTENCE
-  batch_size: 1
+  chunk_type: CHUNK
+  batch_size: 48
   num_workers: 0
   persistent_workers: false
   chunk_length: 512
