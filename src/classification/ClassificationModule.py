@@ -265,8 +265,6 @@ class ClassificationModule(LightningModule):
 
         self.trainer.logger.log_image(f"top_label_confidence_vector_ac", images=[img_path])
 
-        # self.tune_threshold(all_logits, all_labels, num_thresholds=1000)
-
     def forward(self, batch):
         return self.model.forward(**batch.to(self.device))
 
@@ -343,22 +341,11 @@ class ClassificationModule(LightningModule):
         predictions_df.rename(columns={0: "prediction"}, inplace=True)
 
         def get_ranked_predictions(df):
-            # Group by siglum and prediction, count occurrences
             grouped = df.groupby('siglum')['prediction'].value_counts().reset_index(name='count')
-
-            # Calculate total count per siglum
             total_counts = grouped.groupby('siglum')['count'].transform('sum')
-
-            # Calculate share (percentage) of each prediction within its siglum
             grouped['share'] = grouped['count'] / total_counts * 100
-
-            # Sort values and rank within each siglum group
             grouped['rank'] = grouped.groupby('siglum')['count'].rank(method='dense', ascending=False)
-
-            # Sort by siglum and rank for cleaner output
             sorted_groups = grouped.sort_values(['siglum', 'rank'])
-
-            # Create a dictionary to store ranked predictions for each siglum
 
             return sorted_groups
 
@@ -372,38 +359,29 @@ class ClassificationModule(LightningModule):
             return "Other"
 
         def get_division_majority_vote(predictions_df, id2label):
-            # Get ranked predictions by siglum
+            """
+            A helper to get the majority vote (per-class number of top1 probabilities) for logical partis of the Ars.
+            """
             majority_vote_df = get_ranked_predictions(predictions_df)
-
-            # Convert prediction to label
             majority_vote_df = majority_vote_df.assign(
                 prediction=majority_vote_df['prediction'].apply(lambda x: id2label[x]))
 
-            # Assign division
             majority_vote_df = majority_vote_df.assign(
                 division=majority_vote_df['siglum'].apply(lambda x: chapter2div(x)))
 
             majority_vote_df = majority_vote_df[majority_vote_df["division"] != "Other"]
-
-            # Group by division and prediction, summing the counts
             division_grouped = majority_vote_df.groupby(['division', 'prediction'])['count'].sum().reset_index()
 
-            # Calculate total count per division
             division_total_counts = division_grouped.groupby('division')['count'].transform('sum')
 
-            # Calculate share (percentage) of each prediction within its division
             division_grouped['share'] = division_grouped['count'] / division_total_counts * 100
-
-            # Sort values and rank within each division group
             division_grouped['rank'] = division_grouped.groupby('division')['count'].rank(method='dense',
                                                                                           ascending=False)
 
-            # Sort by division and rank for cleaner output
             division_results = division_grouped.sort_values(['division', 'rank'])
 
             return division_results
 
-        # Assuming you have predictions_df and self.id2label available
         division_majority_vote = get_division_majority_vote(predictions_df, self.id2label)
 
         majority_vote_df = get_ranked_predictions(predictions_df)
@@ -439,7 +417,6 @@ class ClassificationModule(LightningModule):
 
         chap_results.to_csv(os.path.join(path, f"chapter_predictions_{self.base_transformer.replace('/', '_')}.csv"),
                        index=False)
-
 
         # logical divisions of the AR
         div_df_melted = div_df.melt(id_vars=['division'], var_name='class', value_name='probability')
@@ -727,12 +704,6 @@ class ClassificationModule(LightningModule):
         if self.calibrated:
             logits2save = self._scale(logits2save)
 
-        # self.save_logits(
-        #     logits=logits2save,
-        #     labels=batch.target.clone().detach(),
-        #     stage=stage
-        # )
-
         self.epoch_outputs[stage].append(logits2save)
         self.epoch_labels[stage].append(labels2save)
 
@@ -778,7 +749,6 @@ class ClassificationModule(LightningModule):
             logger.info(f"Standard deviation of top probabilities: {std_top_prob.item():.4f}")
 
             logger.debug(f"ClassificationModule.make_predictions() -- Top probs: {top_probs}, Top indices: {top_indices}")
-            # Compare the top probability with the rejection threshold
             predictions = torch.where(top_probs > rejection_threshold, top_indices, reject_label)
 
             #for i in range(predictions.shape[0]):
@@ -798,64 +768,5 @@ class ClassificationModule(LightningModule):
 
         return predictions
 
-    def predictions_with_threshold(self, logits, confidence_threshold: float = None, strategy=RejectionMethod.DIFFERENCE):
-        if confidence_threshold is None:
-            confidence_threshold = self.confidence_threshold
-
-        batch_size, num_classes = logits.shape
-        device = logits.device
-
-        # Create a new tensor with an additional class
-        predictions_with_rejection = torch.zeros(batch_size, num_classes + 1, device=device)
-
-        # Copy the original data to the new tensor
-        predictions_with_rejection[:, :num_classes] = logits
-
-        if strategy == RejectionMethod.THRESHOLD:
-            # Check if any class is above the threshold for each sample in the batch
-            above_threshold = (logits > confidence_threshold).any(dim=1)
-        elif strategy == RejectionMethod.DIFFERENCE:
-            # Get the top two values for each sample
-            top2_values, _ = torch.topk(logits, k=2, dim=1)
-
-            # Calculate the difference between top1 and top2
-            diff = top2_values[:, 0] - top2_values[:, 1]
-
-            # Check if the difference is above the threshold for each sample
-            above_threshold = diff > confidence_threshold
-        else:
-            raise ValueError("Invalid threshold strategy. Use ThresholdStrategy.FIXED or ThresholdStrategy.TOP_DIFF")
-
-        # Where condition is not met, set all original classes to 0 and new class to 1
-        predictions_with_rejection[~above_threshold, :num_classes] = 0
-        predictions_with_rejection[~above_threshold, -1] = 1
-
-        return predictions_with_rejection
-
-    # def tune_threshold(self, validation_logits, validation_targets, num_thresholds=100):
-    #     logger.info("Tuning confidence threshold...")
-    #     thresholds = np.linspace(0, 1, num_thresholds)
-    #     best_f1 = 0
-    #     best_threshold = self.confidence_threshold
-    #
-    #     probabilities = torch.nn.functional.softmax(validation_logits, dim=1)
-    #
-    #     for threshold in thresholds:
-    #         predictions = self.make_predictions(validation_logits, confidence_threshold=threshold)
-    #         # Convert tensor to numpy for sklearn metrics
-    #         predictions_np = predictions.cpu().numpy()
-    #         targets_np = validation_targets.cpu().numpy()
-    #
-    #         # Calculate F1 score, ignoring the rejection class
-    #         f1 = f1_score(targets_np, predictions_np, average='weighted', labels=range(self.num_labels))
-    #
-    #         if f1 > best_f1:
-    #             best_f1 = f1
-    #             best_threshold = threshold
-    #
-    #     logger.info(f"Best threshold: {best_threshold:.4f}, Best F1 score: {best_f1:.4f}")
-    #     self.confidence_threshold = best_threshold
-    #     return best_threshold
-
-
-
+if __name__ == "__main__":
+    pass
