@@ -3,3 +3,4 @@
 /src/huggingface_hub_token.txt
 /src/classification/baseline.py
 /src/verification/
+/src/datasets/VerificationDataset.py
