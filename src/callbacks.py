@@ -69,16 +69,8 @@ class PushToHuggingfaceCallback(Callback):
                 repo_id=self.repo_id,
                 repo_type="model",
                 token=self.token,
-                # ignore_patterns=[".gitattributes", ".gitignore", "**/checkpoints/**", "logs/**", "**/wandb/**"],
-                # delete_patterns=[".gitattributes", ".gitignore", "**/checkpoints/**", "logs/**", "**/wandb/**"]
             )
 
-            # push the model to the hub
-            # pl_module.model.model.push_to_hub(
-            #     repo_id=self.repo_id,
-            #     commit_message=f"Upload model after epoch {epoch}",
-            #     use_auth_token=self.token
-            # )
             logger.info(f"Model uploaded to {self.repo_id} after epoch {epoch}")
 
     def on_exception(self, trainer, pl_module, exception):
