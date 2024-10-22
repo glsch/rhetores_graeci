@@ -38,7 +38,7 @@ class PushToHuggingfaceCallback(Callback):
             except Exception as e:
                 print(f"Repository already exists or there was an error: {e}")
 
-            # Ensure the model attribute of the Lightning module is a PreTrainedModel
+            # ensure the model attribute of the Lightning module is a PreTrainedModel
             if not isinstance(pl_module.model, PreTrainedModel):
                 raise ValueError("The 'model' attribute of your LightningModule must be an instance of PreTrainedModel")
 
@@ -73,6 +73,5 @@ class PushToHuggingfaceCallback(Callback):
 
             logger.info(f"Model uploaded to {self.repo_id} after epoch {epoch}")
 
-    def on_exception(self, trainer, pl_module, exception):
-        logger.info(f"An exception occurred: {exception}")
-        # You might want to implement some error handling here
+    # def on_exception(self, trainer, pl_module, exception):
+    #     logger.info(f"An exception occurred: {exception}")
