@@ -11,6 +11,14 @@ The repository contains the code and the data for the paper "Fine-Tuning Pre-Tra
 }
 ```
 ## Structure of the repository
+``data/preprocessed`` Chunked (i.e., tokenized - chunked - back-decoded) data used for MLM fine-tuning and classifiers training. 
+``data/classification``  
+``notebooks`` Jupyter notebooks used for fine-tuning and classification. 
+``src`` Python scripts used for fine-tuning and classification. 
+``models`` Fine-tuned models. 
+``results`` Results of the classification. 
+``requirements.txt`` Required Python packages. 
+``README.md`` This file.
 ### Dataset
 Before training classifiers, all the models were tuned with a MLM objective on a 
 corpus of 75 authors of rhetorician and orators, who were selected based on 'Rhet.' and 'Orat.' epithets in the TLG.
