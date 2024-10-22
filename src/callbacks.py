@@ -20,7 +20,7 @@ class PushToHuggingfaceCallback(Callback):
         self.repo_name = None
 
         if self.token is None:
-            raise ValueError("Hugging Face token is required. Set it as an environment variable HF_TOKEN or pass it to the callback.")
+            raise ValueError("Hugging Face token is required. Set it as an environment variable 'HF_TOKEN' or pass it to the callback.")
 
     def on_save_checkpoint(self, trainer, pl_module, checkpoint):
         if self.repo_id is None or self.repo_name is None:
