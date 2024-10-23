@@ -1,8 +1,12 @@
+# python standard modules
 import os
-from lightning.pytorch import Callback
-from transformers import PreTrainedModel, AutoConfig
-from huggingface_hub import HfApi, create_repo
 
+# third-party modules
+from lightning.pytorch import Callback
+from transformers import PreTrainedModel
+from huggingface_hub import HfApi
+
+# project modules
 from src.logger_config import logger
 
 class PushToHuggingfaceCallback(Callback):
@@ -25,6 +29,7 @@ class PushToHuggingfaceCallback(Callback):
     def on_save_checkpoint(self, trainer, pl_module, checkpoint):
         if self.repo_id is None or self.repo_name is None:
             transformer_name = pl_module.base_transformer
+            # the following is necessary to avoid prefixing the repo name with the repo owner again and again
             if transformer_name.startswith(f"{self.repo_owner}/"):
                 transformer_name = transformer_name.replace(f"{self.repo_owner}/", "")
 
@@ -34,7 +39,7 @@ class PushToHuggingfaceCallback(Callback):
 
             try:
                 self.repo_id = self.api.create_repo(self.repo_name_id, exist_ok=True, token=self.token, private=self.private).repo_id
-                # create_repo(self.repo_id, private=self.private, token=self.token)
+
             except Exception as e:
                 print(f"Repository already exists or there was an error: {e}")
 
@@ -54,8 +59,6 @@ class PushToHuggingfaceCallback(Callback):
 
         path = os.path.join(path, "huggingface")
 
-        #logger.info(f"PushToHuggingfaceCallback() -- Saving model to {path}")
-
         # saving the model and the corresponding tokenizer as huggingface models and tokenizer
         pl_module.tokenizer.save_pretrained(path)
         pl_module.model.save_pretrained(path)
@@ -73,5 +76,5 @@ class PushToHuggingfaceCallback(Callback):
 
             logger.info(f"Model uploaded to {self.repo_id} after epoch {epoch}")
 
-    # def on_exception(self, trainer, pl_module, exception):
-    #     logger.info(f"An exception occurred: {exception}")
+if __name__ == "__main__":
+    pass

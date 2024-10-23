@@ -1,35 +1,22 @@
-import argparse
+# python standard modules
 import os
-from typing import Any, Tuple, Type, Union, Dict
+from typing import Type, Union
 
+# third-party modules
+from jsonargparse.typing import NonNegativeInt
 from lightning.pytorch import LightningModule
-
+from lightning.pytorch.cli import OptimizerCallable
 import torch
-from pytorch_lightning.utilities.types import STEP_OUTPUT
 from transformers import (
-    BertConfig,
-    BertModel,
-    AutoConfig,
-    BertForMaskedLM,
-    PretrainedConfig,
-    DataCollatorForLanguageModeling,
     AutoModelForMaskedLM,
+    PreTrainedTokenizer,
+    PreTrainedTokenizerFast,
     get_scheduler,
-    AutoTokenizer,
     SchedulerType
 )
 
-from jsonargparse import lazy_instance
-
-from lightning.pytorch.cli import OptimizerCallable
-
-from jsonargparse.typing import NonNegativeInt, NonNegativeFloat,ClosedUnitInterval, restricted_number_type, PositiveInt
-
-from src.path_manager import PathManager
+# project modules
 from src.logger_config import logger
-from transformers import PreTrainedTokenizer, PreTrainedTokenizerFast
-
-# todo: add pushing to hub
 
 class MlmTuningModule(LightningModule):
 
@@ -108,14 +95,18 @@ class MlmTuningModule(LightningModule):
             num_training_steps=num_training_steps
         )
 
-        return {
+        optim_dict = {
             "optimizer": optimizer,
             "lr_scheduler": {
                 "scheduler": scheduler,
                 "interval": "step",
                 "frequency": 1,
-                #"monitor": "val/loss",
-                #"strict": False,
                 "name": self.lr_scheduler_type
             },
         }
+
+        if self.lr_scheduler_type == SchedulerType.REDUCE_ON_PLATEAU:
+            optim_dict["lr_scheduler"]["monitor"] = "val/loss"
+            optim_dict["lr_scheduler"]["strict"] = False
+
+        return optim_dict

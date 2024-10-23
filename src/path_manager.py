@@ -1,8 +1,9 @@
+# python standard modules
 from datetime import datetime
 import json
 import os
 from typing import Union
-from dotenv import load_dotenv
+
 
 class PathManager:
 
@@ -92,6 +93,4 @@ class PathManager:
 _path_manager_instance = PathManager.get_instance()
 
 if __name__ == "__main__":
-
-    pm = PathManager.get_instance()
-    print(pm.get_experiment_id())
+    pass

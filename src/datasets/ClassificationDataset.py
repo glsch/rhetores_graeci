@@ -1,20 +1,14 @@
-import argparse
-import os
-import random
-from typing import Literal, List, Union, Tuple, Dict, Any
+# python standard modules
+from typing import Literal, Union, Any
 
+# third-party modules
 import pandas as pd
-
-import torch
-from transformers import AutoTokenizer, BatchEncoding
-import torch.nn.functional as F
 from torch.utils.data import Dataset
 
-from transformers import PreTrainedTokenizer, PreTrainedTokenizerFast, AutoTokenizer
+from transformers import PreTrainedTokenizer, PreTrainedTokenizerFast
 
-
+# project modules
 from src.logger_config import logger
-from src.path_manager import PathManager
 
 class ClassificationDataset(Dataset):
     def __init__(
@@ -29,6 +23,8 @@ class ClassificationDataset(Dataset):
         self.split = split
 
         self.records = self.df.to_dict(orient="records")
+
+        logger.debug(f"Loaded {len(self.records)} records for {self.split} split.")
 
     def __len__(self):
         return len(self.records)
@@ -48,53 +44,10 @@ class ClassificationDataset(Dataset):
 
         tokenized["label"] = self.records[idx]["label"]
 
+        logger.debug(f"Tokenized record {idx} for {self.split} split.")
+        logger.debug(f"Tokenized: {tokenized}.")
+
         return tokenized
 
 if __name__ == "__main__":
-    from src.datasets.AncientGreekDataModule import AncientGreekDataModule, TextChunkType
-    from transformers import DefaultDataCollator
-    from torch.utils.data import DataLoader
-    from pytorch_metric_learning.samplers import MPerClassSampler
-
-    tokenizer = AutoTokenizer.from_pretrained("bowphs/GreBerta")
-    dm = AncientGreekDataModule(epithets=["Rhet.", "Orat."], tokenizer=tokenizer, chunk_type=TextChunkType.SENTENCE)
-
-    dm.prepare_data()
-
-    from transformers import RobertaForSequenceClassification
-
-    model = RobertaForSequenceClassification.from_pretrained("bowphs/GreBerta")
-
-    mlm_dataset = ClassificationDataset(df=dm.dataset, split="train", tokenizer=tokenizer)
-
-    batch = []
-    for i in range(10):
-        # print(mlm_dataset[i].input_ids.shape)
-        # print(bert(**mlm_dataset[i]))
-        it = mlm_dataset[i]
-        # print(it)
-        batch.append(it)
-
-    collate_fn = DefaultDataCollator(return_tensors="pt")
-
-    train_loader = DataLoader(
-        mlm_dataset,
-        batch_size=32,
-        sampler=MPerClassSampler(mlm_dataset.labels, m=3, length_before_new_iter=10000),
-        collate_fn=collate_fn
-    )
-
-    # batch = collate_fn(batch)
-    for _, b in enumerate(train_loader):
-        if _ == 4:
-            break
-
-        print(b)
-
-
-    print(len(mlm_dataset.labels))
-    print(mlm_dataset.id2label)
-    print(len(mlm_dataset.df.siglum.unique().tolist()))
-
-        # print(model(**b))
-
+    pass

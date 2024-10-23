@@ -1,59 +1,42 @@
+# python standard modules
 import ast
 import enum
 import os.path
 from typing import List, Union, Type
-from typing import ForwardRef
 
+
+# third-party modules
+from jsonargparse.typing import (
+    NonNegativeInt,
+    restricted_number_type
+)
+from lightning.pytorch import LightningDataModule
+from nltk import sent_tokenize
+from torch.utils.data import DataLoader
+import pandas as pd
+from pytorch_metric_learning.samplers import MPerClassSampler
+from transformers import (
+    AutoModelForMaskedLM,
+    AutoModelForSequenceClassification,
+    AutoTokenizer,
+    DataCollatorForLanguageModeling,
+    DataCollatorWithPadding,
+)
 import transformers.models.auto
 from tqdm import tqdm
 tqdm.pandas()
 
-from lightning.pytorch import LightningDataModule
-
-from jsonargparse.typing import NonNegativeInt, NonNegativeFloat,ClosedUnitInterval, restricted_number_type
-
-from src.datasets.PandasDataset import PandasDataset
-from src.path_manager import PathManager
-from src.datasets.utils import download_dataset
-from transformers import AutoTokenizer, AutoModel, RobertaModel, DataCollatorForLanguageModeling, DefaultDataCollator, DataCollatorWithPadding, AutoModelForMaskedLM, AutoModelForSequenceClassification
-
-import torch
-from transformers import PreTrainedTokenizer, PreTrainedTokenizerFast, AutoTokenizer
-from nltk import sent_tokenize, word_tokenize
-import pandas as pd
-from torch.utils.data import Dataset, DataLoader
-
-from src.datasets.MlmDataset import MLMDataset
+# project modules
 from src.datasets.ClassificationDataset import ClassificationDataset
+from src.datasets.MlmDataset import MLMDataset
+from src.datasets.PandasDataset import PandasDataset
+from src.datasets.utils import download_dataset
 from src.logger_config import logger
-from pytorch_metric_learning.samplers import MPerClassSampler
-from dataclasses import dataclass
+from src.path_manager import PathManager
 
 class TextChunkType(enum.Enum):
     SENTENCE = "sentence"
     CHUNK = "chunk"
-
-def resolve_forward_ref(ref: Union[str, ForwardRef, Type]):
-    if isinstance(ref, str):
-        ref = ForwardRef(ref)
-    if isinstance(ref, ForwardRef):
-        return ref._evaluate(globals(), locals(), set())
-    return ref
-
-
-@dataclass
-class CustomDataCollatorWithPadding(DataCollatorWithPadding):
-    siglum: str = None
-
-    def __call__(self, features):
-        # Call the parent class to handle the default collation
-        batch = super().__call__(features)
-
-        # Handle the additional key
-        if self.siglum in features[0]:
-            batch[self.siglum] = [f[self.siglum] for f in features]
-
-        return batch
 
 
 class AncientGreekDataModule(LightningDataModule):
@@ -345,6 +328,7 @@ class AncientGreekDataModule(LightningDataModule):
         if self.dataset is None:
             self.dataset = pd.read_csv(self.preprocessed_dataset_path)
 
+        # an alternative way to filter out the authors for mlm tuning
         # if self.task == "mlm":
         #    prohibited_ids = [i for i in self.study_author_ids + self.unk_author_ids if i != 81]
         #    self.dataset = self.dataset[~self.dataset["author_id"].isin(prohibited_ids)]
@@ -365,7 +349,6 @@ class AncientGreekDataModule(LightningDataModule):
 
         if self.task == "mlm":
             prohibited_ids = [i for i in self.study_author_ids + self.unk_author_ids if i != 81]
-
             self.train_df = self.train_df[~self.train_df["author_id"].isin(prohibited_ids)]
             self.val_df = self.val_df[~self.val_df["author_id"].isin(prohibited_ids)]
             self.test_df = self.test_df[~self.test_df["author_id"].isin(prohibited_ids)]
@@ -382,10 +365,11 @@ class AncientGreekDataModule(LightningDataModule):
 
             self.collate_fn = DataCollatorWithPadding(return_tensors="pt", tokenizer=self.tokenizer, padding="max_length", max_length=512)
 
+            # defining MPerClassSampler's for DataLoaders
             m = (self.batch_size // self._num_labels) + 1
+            # this can be used for "exploding" the datasets
             # length_before_new_iter = int(100 * self.batch_size)
             # length_before_new_iter = self.train_df.shape[0] * 5
-            # defining MPerClassSampler's for DataLoaders
             self.sampler = [
                 MPerClassSampler(self.train_df["label"].tolist(), m=m, length_before_new_iter=self.train_df.shape[0]),
                 MPerClassSampler(self.val_df["label"].tolist(), m=m, length_before_new_iter=self.val_df.shape[0]),
@@ -408,8 +392,6 @@ class AncientGreekDataModule(LightningDataModule):
             self.test_dataset = dataset_cls(df=self.test_df, split="test", tokenizer=self.tokenizer)
             self.val_dataset = dataset_cls(df=self.val_df, split="val", tokenizer=self.tokenizer)
             self.predict_dataset = dataset_cls(df=self.predict_df, split="predict", tokenizer=self.tokenizer)
-
-
 
     def get_sampler(self, stage="train"):
         stage2idx = {"train": 0, "val": 1, "test": 2}
@@ -475,9 +457,4 @@ class AncientGreekDataModule(LightningDataModule):
         return loader
 
 if __name__ == "__main__":
-    #tokenizer = AutoTokenizer.from_pretrained("bowphs/GreBerta")
-    #model = AutoModelForSequenceClassificationWrapper(pretrained_model_name_or_path="bowphs/GreBerta")
-    #dm = AncientGreekDataModule(epithets=["Rhet.", "Orat."], tokenizer=tokenizer, model=model, chunk_type=TextChunkType.CHUNK, overlap=0.5, chunk_length=128)
-    dm = AncientGreekDataModule(epithets=["Rhet.", "Orat."], model_class=AutoModelForSequenceClassification, chunk_type=TextChunkType.CHUNK, overlap=0.5, chunk_length=128)
-
-    # dm.prepare_data()
+    pass

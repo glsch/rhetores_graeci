@@ -1,3 +1,4 @@
+# python standard modules
 from argparse import Namespace
 from functools import partial
 import os
@@ -5,6 +6,7 @@ import re
 from typing import List, Union, Tuple, Any, Dict
 import unicodedata
 
+# third-party modules
 import pandas as pd
 from transformers import AutoTokenizer
 from tqdm import tqdm
