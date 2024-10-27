@@ -1,11 +1,11 @@
 # Fine-Tuning Pre-Trained Language Models for Authorship Attribution of the Pseudo-Dionysian Ars Rhetorica
 The repository contains the code and the data for the paper "Fine-Tuning Pre-Trained Language Models for Authorship Attribution of the Pseudo-Dionysian _Ars Rhetorica_" by Gleb Schmidt, Veronika Vybornaya, and Ivan P. Yamshchikov, presented as a poster at the Computational Humanities Research Conference (December 4–6, 2024, Aarhus, Denmark):
 ```bibtex
-@inproceedings{plm_aa_ars_rhetorica,
+@inproceedings{plm_aa_ars_rhetorica_2024,
   title={Fine-Tuning Pre-Trained Language Models for Authorship Attribution of the Pseudo-Dionysian <i>Ars Rhetorica</i>},
   author={Schmidt, Gleb and Vybornaya, Veronika and Yamshchikov, Ivan P.},
   booktitle={Proceedings of the Computational Humanities Research Conference},
-  eventtitle={Computational Humanities Research Conference},
+  eventtitle={Computational Humanities Research Conference 2024},
   eventdate = {2024-12-04/2024-12-06},
   year={2024}
 }

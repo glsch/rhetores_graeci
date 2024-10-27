@@ -84,8 +84,8 @@ def _ce_plot(self, ax: _AX_TYPE | None = None) -> _PLOT_OUT_TYPE:
     return fig, ax
 
 class RejectionMethod(enum.Enum):
-    DIFFERENCE = "sentence"
-    THRESHOLD = "chunk"
+    DIFFERENCE = "difference"
+    THRESHOLD = "threshold"
 
 class ClassificationModule(LightningModule):
     def __init__(
