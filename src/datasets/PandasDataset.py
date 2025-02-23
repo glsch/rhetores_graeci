@@ -103,7 +103,7 @@ class PandasDataset:
             & (expression
             # adding DIONYSIUS HALICARNASSENSIS, too
                | (self.author_metadata_df["author_id"].isin(study_author_ids)) | self.author_metadata_df["author_id"].isin(unk_author_ids))][
-            ["epithet", "author_id", "author", "period"]].sort_values(by="author", ascending=True)
+            ["epithet", "author_id", "author", "title", "period"]].sort_values(by="author", ascending=True)
 
         return filtered_by_epithet
 
